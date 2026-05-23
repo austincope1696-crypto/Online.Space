@@ -10,9 +10,9 @@ import { Zap, Check, ArrowRight, Loader } from 'lucide-react'
 type Template = 'solar' | 'realestate' | 'content' | null
 
 const TEMPLATE_OPTIONS = [
-  { k: 'solar',       label: 'Solar sales',      desc: 'Leads, installs, jobs, subcontractors' },
-  { k: 'realestate',  label: 'Real estate',       desc: 'Listings, buyers, wholesale, closed' },
-  { k: 'content',     label: 'Content creator',   desc: 'Brand deals, calendar, scripts' },
+  { k: 'solar',      label: 'Solar sales',    desc: 'Leads, installs, jobs, subcontractors' },
+  { k: 'realestate', label: 'Real estate',     desc: 'Listings, buyers, wholesale, closed' },
+  { k: 'content',    label: 'Content creator', desc: 'Brand deals, calendar, scripts' },
 ]
 
 export default function OnboardingPage() {
@@ -56,16 +56,13 @@ export default function OnboardingPage() {
 
     if (spaceErr) { setError(spaceErr.message); setSaving(false); return }
 
-    // Seed template data if chosen
     if (template && TEMPLATES[template]) {
       const tpl = TEMPLATES[template]
-
       if (selectedModules.includes('folders') && tpl.folders?.length) {
         await supabase.from('folders').insert(
           tpl.folders.map(f => ({ ...f, user_id: user.id }))
         )
       }
-
       if (selectedModules.includes('crm') && tpl.contacts?.length) {
         await supabase.from('contacts').insert(
           tpl.contacts.map(c => ({ ...c, user_id: user.id }))
@@ -76,97 +73,106 @@ export default function OnboardingPage() {
     router.push('/dashboard')
   }
 
+  const STEPS = ['modules', 'template', 'profile'] as const
+
   return (
-    <div className="ob-wrap">
+    <div className="ob-page">
       <div className="ob-card">
-        <div className="land-logo" style={{ marginBottom: 24 }}>
-          <Zap size={18} className="land-logo-icon" />
-          space.online
+        <div className="ob-brand">
+          <div className="brand">
+            <Zap size={18} className="brand-icon" />
+            space.online
+          </div>
         </div>
 
+        {/* ── Step 1: Modules ─────────────────────────────── */}
         {step === 'modules' && (
           <>
             <h2 className="ob-title">What do you need?</h2>
-            <p className="ob-sub">Pick the tools you want in your workspace. You can change this anytime.</p>
+            <p className="ob-sub">Pick the tools for your workspace. You can change this anytime.</p>
 
-            <div className="ob-modules">
+            <div className="ob-list">
               {MODULE_OPTIONS.map(m => (
                 <button
                   key={m.k}
-                  className={`ob-module-btn${selectedModules.includes(m.k) ? ' selected' : ''}`}
+                  className={`ob-item${selectedModules.includes(m.k) ? ' selected' : ''}`}
                   onClick={() => toggleModule(m.k)}
                 >
-                  <div className="ob-module-check">
+                  <div className="ob-check">
                     {selectedModules.includes(m.k) && <Check size={12} />}
                   </div>
                   <div>
-                    <div className="ob-module-label">{m.label}</div>
-                    <div className="ob-module-desc">{m.desc}</div>
+                    <div className="ob-item-label">{m.label}</div>
+                    <div className="ob-item-desc">{m.desc}</div>
                   </div>
                 </button>
               ))}
             </div>
 
-            <button
-              className="btn btn-primary ob-next"
-              disabled={selectedModules.length === 0}
-              onClick={() => setStep('template')}
-            >
-              Continue <ArrowRight size={15} />
-            </button>
-          </>
-        )}
-
-        {step === 'template' && (
-          <>
-            <h2 className="ob-title">Start from a template?</h2>
-            <p className="ob-sub">We'll seed your workspace with folders and sample contacts.</p>
-
-            <div className="ob-templates">
-              {TEMPLATE_OPTIONS.map(t => (
-                <button
-                  key={t.k}
-                  className={`ob-template-btn${template === t.k ? ' selected' : ''}`}
-                  onClick={() => setTemplate(prev => prev === t.k ? null : t.k as Template)}
-                >
-                  <div className="ob-module-check">
-                    {template === t.k && <Check size={12} />}
-                  </div>
-                  <div>
-                    <div className="ob-module-label">{t.label}</div>
-                    <div className="ob-module-desc">{t.desc}</div>
-                  </div>
-                </button>
-              ))}
+            <div className="ob-actions">
               <button
-                className={`ob-template-btn${template === null ? ' selected' : ''}`}
-                onClick={() => setTemplate(null)}
+                className="btn btn-primary ob-btn"
+                disabled={selectedModules.length === 0}
+                onClick={() => setStep('template')}
               >
-                <div className="ob-module-check">
-                  {template === null && <Check size={12} />}
-                </div>
-                <div>
-                  <div className="ob-module-label">Start blank</div>
-                  <div className="ob-module-desc">Empty workspace — build it your way</div>
-                </div>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost ob-next" onClick={() => setStep('modules')}>
-                Back
-              </button>
-              <button className="btn btn-primary ob-next" onClick={() => setStep('profile')}>
                 Continue <ArrowRight size={15} />
               </button>
             </div>
           </>
         )}
 
+        {/* ── Step 2: Template ────────────────────────────── */}
+        {step === 'template' && (
+          <>
+            <h2 className="ob-title">Start from a template?</h2>
+            <p className="ob-sub">We'll seed your workspace with folders and sample contacts.</p>
+
+            <div className="ob-list">
+              {TEMPLATE_OPTIONS.map(t => (
+                <button
+                  key={t.k}
+                  className={`ob-item${template === t.k ? ' selected' : ''}`}
+                  onClick={() => setTemplate(prev => prev === t.k ? null : t.k as Template)}
+                >
+                  <div className="ob-check">
+                    {template === t.k && <Check size={12} />}
+                  </div>
+                  <div>
+                    <div className="ob-item-label">{t.label}</div>
+                    <div className="ob-item-desc">{t.desc}</div>
+                  </div>
+                </button>
+              ))}
+              <button
+                className={`ob-item${template === null ? ' selected' : ''}`}
+                onClick={() => setTemplate(null)}
+              >
+                <div className="ob-check">
+                  {template === null && <Check size={12} />}
+                </div>
+                <div>
+                  <div className="ob-item-label">Start blank</div>
+                  <div className="ob-item-desc">Empty workspace — build it your way</div>
+                </div>
+              </button>
+            </div>
+
+            <div className="ob-actions">
+              <button className="btn btn-ghost ob-btn" onClick={() => setStep('modules')}>
+                Back
+              </button>
+              <button className="btn btn-primary ob-btn" onClick={() => setStep('profile')}>
+                Continue <ArrowRight size={15} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── Step 3: Profile ─────────────────────────────── */}
         {step === 'profile' && (
           <>
             <h2 className="ob-title">Set up your profile</h2>
-            <p className="ob-sub">This is your public page at space.online/username</p>
+            <p className="ob-sub">Your public page will live at space.online/username</p>
 
             <div className="ob-form">
               <div className="inp-group">
@@ -191,7 +197,9 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="inp-group">
-                <label className="inp-label">Bio <span style={{ color: 'var(--tx3)' }}>(optional)</span></label>
+                <label className="inp-label">
+                  Bio <span style={{ color: 'var(--tx3)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+                </label>
                 <textarea
                   className="inp inp-ta"
                   placeholder="Tell the world what you do..."
@@ -202,26 +210,29 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {error && <p className="land-error">{error}</p>}
+            {error && <p className="auth-error">{error}</p>}
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost ob-next" onClick={() => setStep('template')}>
+            <div className="ob-actions">
+              <button className="btn btn-ghost ob-btn" onClick={() => setStep('template')}>
                 Back
               </button>
               <button
-                className="btn btn-primary ob-next"
+                className="btn btn-primary ob-btn"
                 onClick={finish}
                 disabled={saving}
               >
-                {saving ? <><Loader size={15} className="spin" /> Saving…</> : <>Launch my space <Zap size={15} /></>}
+                {saving
+                  ? <><Loader size={15} className="spin" /> Saving…</>
+                  : <>Launch my space <Zap size={15} /></>
+                }
               </button>
             </div>
           </>
         )}
 
-        <div className="ob-steps">
-          {(['modules', 'template', 'profile'] as const).map((s, i) => (
-            <div key={s} className={`ob-step-dot${step === s ? ' active' : ''}`} />
+        <div className="ob-dots">
+          {STEPS.map(s => (
+            <div key={s} className={`ob-dot${step === s ? ' active' : ''}`} />
           ))}
         </div>
       </div>

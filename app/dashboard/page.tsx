@@ -1,22 +1,21 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_SOCIALS, STAGES, FOLDER_ICONS, FOLDER_COLORS, MODULE_OPTIONS } from '@/lib/constants'
 import type { Space, Contact, Folder, Module } from '@/lib/types'
 import {
   Zap, User, BarChart2, FolderOpen, StickyNote, Calendar, BookOpen,
-  LogOut, Plus, Trash2, Save, ExternalLink, Menu, X, ChevronDown,
-  GripVertical, Settings, Globe, Link2, Search, Edit2, Eye,
+  LogOut, Plus, Trash2, Save, X, Menu, Eye,
 } from 'lucide-react'
 
 const MODULE_ICONS: Record<Module, React.ReactNode> = {
-  crm:      <BarChart2 size={16} />,
-  folders:  <FolderOpen size={16} />,
-  notes:    <StickyNote size={16} />,
-  calendar: <Calendar size={16} />,
-  diary:    <BookOpen size={16} />,
+  crm:      <BarChart2 size={15} />,
+  folders:  <FolderOpen size={15} />,
+  notes:    <StickyNote size={15} />,
+  calendar: <Calendar size={15} />,
+  diary:    <BookOpen size={15} />,
 }
 
 const MODULE_LABELS: Record<Module, string> = {
@@ -42,7 +41,6 @@ export default function DashboardPage() {
   const [profileDraft, setProfileDraft] = useState<Partial<Space>>({})
 
   // CRM state
-  const [crmSearch, setCrmSearch] = useState('')
   const [activeContact, setActiveContact] = useState<Contact | null>(null)
   const [contactDraft, setContactDraft] = useState<Partial<Contact>>({})
   const [showNewContact, setShowNewContact] = useState(false)
@@ -100,8 +98,7 @@ export default function DashboardPage() {
     router.push('/')
   }
 
-  // ── CRM ──────────────────────────────────────────────────────────────────
-
+  // ── CRM ──────────────────────────────────────────────────────────────
   async function createContact() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -139,8 +136,7 @@ export default function DashboardPage() {
     if (activeContact?.id === id) { setActiveContact(null); setContactDraft({}) }
   }
 
-  // ── Folders ───────────────────────────────────────────────────────────────
-
+  // ── Folders ───────────────────────────────────────────────────────────
   async function createFolder() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -174,8 +170,7 @@ export default function DashboardPage() {
     if (activeFolder?.id === id) { setActiveFolder(null); setFolderDraft({}) }
   }
 
-  // ── Notes ─────────────────────────────────────────────────────────────────
-
+  // ── Notes ─────────────────────────────────────────────────────────────
   async function createNote() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -200,8 +195,7 @@ export default function DashboardPage() {
     if (activeNote?.id === id) setActiveNote(null)
   }
 
-  // ── Diary ─────────────────────────────────────────────────────────────────
-
+  // ── Diary ─────────────────────────────────────────────────────────────
   async function createDiaryEntry() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -220,6 +214,11 @@ export default function DashboardPage() {
     setSaving(false)
   }
 
+  function nav(s: Section) {
+    setSection(s)
+    setSidebarOpen(false)
+  }
+
   if (loading) return (
     <div className="dash-loading">
       <Zap size={28} style={{ color: 'var(--teal)' }} className="spin" />
@@ -229,428 +228,511 @@ export default function DashboardPage() {
   if (!space) return null
 
   const modules = (space.modules ?? []) as Module[]
-  const filteredContacts = contacts.filter(c =>
-    !crmSearch || c.name.toLowerCase().includes(crmSearch.toLowerCase()) ||
-    (c.company ?? '').toLowerCase().includes(crmSearch.toLowerCase())
-  )
 
   return (
     <div className="dash-layout">
-      {/* Mobile header */}
+      {/* ── Mobile header ───────────────────────────────────── */}
       <div className="dash-mobile-header">
-        <div className="land-logo" style={{ fontSize: 15 }}>
-          <Zap size={15} className="land-logo-icon" /> space.online
+        <div className="brand" style={{ fontSize: 14 }}>
+          <Zap size={14} className="brand-icon" /> space.online
         </div>
         <button className="btn btn-ghost btn-icon" onClick={() => setSidebarOpen(o => !o)}>
           {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
-      {/* Sidebar */}
-      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
-        <div className="sidebar-logo">
-          <Zap size={16} className="land-logo-icon" />
-          <span>space.online</span>
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside className={`dash-sidebar${sidebarOpen ? ' open' : ''}`}>
+        <div className="dash-sidebar-logo">
+          <Zap size={15} className="brand-icon" />
+          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-.03em' }}>space.online</span>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="dash-sidebar-nav">
+          <div className="dash-nav-section">Workspace</div>
           <button
-            className={`sidebar-item${section === 'profile' ? ' active' : ''}`}
-            onClick={() => { setSection('profile'); setSidebarOpen(false) }}
+            className={`dash-nav-item${section === 'profile' ? ' active' : ''}`}
+            onClick={() => nav('profile')}
           >
-            <User size={16} /> Profile
+            <User size={15} /> Profile
           </button>
 
           {modules.map(m => (
             <button
               key={m}
-              className={`sidebar-item${section === m ? ' active' : ''}`}
-              onClick={() => { setSection(m); setSidebarOpen(false) }}
+              className={`dash-nav-item${section === m ? ' active' : ''}`}
+              onClick={() => nav(m)}
             >
               {MODULE_ICONS[m]} {MODULE_LABELS[m]}
             </button>
           ))}
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="dash-sidebar-footer">
           {space.username && (
             <a
               href={`/${space.username}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="sidebar-item"
+              className="dash-nav-item"
             >
-              <Eye size={16} /> View profile
+              <Eye size={15} /> View profile
             </a>
           )}
-          <button className="sidebar-item" onClick={signOut}>
-            <LogOut size={16} /> Sign out
+          <button className="dash-nav-item" onClick={signOut}>
+            <LogOut size={15} /> Sign out
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ── Main ────────────────────────────────────────────── */}
       <main className="dash-main" onClick={() => sidebarOpen && setSidebarOpen(false)}>
 
-        {/* ── Profile ─────────────────────────────────────────────── */}
+        {/* ── Profile ───────────────────────────────────────── */}
         {section === 'profile' && (
-          <div className="dash-section">
-            <div className="dash-header">
-              <h1>Profile</h1>
-              <button className="btn btn-primary" onClick={saveProfile} disabled={saving}>
-                <Save size={14} /> {saving ? 'Saving…' : 'Save'}
-              </button>
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">Profile</span>
+              <div className="dash-topbar-actions">
+                <button className="btn btn-primary btn-sm" onClick={saveProfile} disabled={saving}>
+                  <Save size={13} /> {saving ? 'Saving…' : 'Save'}
+                </button>
+                {space.username && (
+                  <a
+                    href={`/${space.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm"
+                  >
+                    <Eye size={13} /> Preview
+                  </a>
+                )}
+              </div>
             </div>
-
-            <div className="profile-grid">
-              <div className="profile-col">
-                <div className="card">
-                  <h3 className="card-title">Basic info</h3>
-                  <div className="inp-group">
-                    <label className="inp-label">Display name</label>
-                    <input className="inp" value={profileDraft.display_name ?? ''} onChange={e => setProfileDraft(p => ({ ...p, display_name: e.target.value }))} />
-                  </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Username</label>
-                    <div className="inp-prefix-wrap">
-                      <span className="inp-prefix">space.online/</span>
-                      <input className="inp inp-prefixed" value={profileDraft.username ?? ''} onChange={e => setProfileDraft(p => ({ ...p, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))} />
+            <div className="dash-content">
+              <div className="profile-grid">
+                <div>
+                  <div className="card">
+                    <h3 className="card-title">Basic info</h3>
+                    <div className="inp-group">
+                      <label className="inp-label">Display name</label>
+                      <input className="inp" value={profileDraft.display_name ?? ''} onChange={e => setProfileDraft(p => ({ ...p, display_name: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Username</label>
+                      <div className="inp-prefix-wrap">
+                        <span className="inp-prefix">space.online/</span>
+                        <input className="inp inp-prefixed" value={profileDraft.username ?? ''} onChange={e => setProfileDraft(p => ({ ...p, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))} />
+                      </div>
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Bio</label>
+                      <textarea className="inp inp-ta" rows={3} value={profileDraft.bio ?? ''} onChange={e => setProfileDraft(p => ({ ...p, bio: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Location</label>
+                      <input className="inp" value={profileDraft.location ?? ''} onChange={e => setProfileDraft(p => ({ ...p, location: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Website</label>
+                      <input className="inp" placeholder="https://" value={profileDraft.website ?? ''} onChange={e => setProfileDraft(p => ({ ...p, website: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Bio</label>
-                    <textarea className="inp inp-ta" rows={3} value={profileDraft.bio ?? ''} onChange={e => setProfileDraft(p => ({ ...p, bio: e.target.value }))} />
+                </div>
+
+                <div>
+                  <div className="card">
+                    <h3 className="card-title">Social links</h3>
+                    {(profileDraft.socials ?? DEFAULT_SOCIALS).map((s, i) => (
+                      <div key={s.k} className="inp-group">
+                        <label className="inp-label">{s.p}</label>
+                        <input
+                          className="inp"
+                          placeholder={`${s.k} URL`}
+                          value={s.url}
+                          onChange={e => {
+                            const updated = [...(profileDraft.socials ?? DEFAULT_SOCIALS)]
+                            updated[i] = { ...updated[i], url: e.target.value }
+                            setProfileDraft(p => ({ ...p, socials: updated }))
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Location</label>
-                    <input className="inp" value={profileDraft.location ?? ''} onChange={e => setProfileDraft(p => ({ ...p, location: e.target.value }))} />
-                  </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Website</label>
-                    <input className="inp" placeholder="https://" value={profileDraft.website ?? ''} onChange={e => setProfileDraft(p => ({ ...p, website: e.target.value }))} />
+
+                  <div className="card">
+                    <div className="card-title-row">
+                      <h3 className="card-title">Links</h3>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setProfileDraft(p => ({
+                          ...p, links: [...(p.links ?? []), { id: crypto.randomUUID(), label: '', url: '', icon: '' }]
+                        }))}
+                      >
+                        <Plus size={13} /> Add
+                      </button>
+                    </div>
+                    {(profileDraft.links ?? []).map((l, i) => (
+                      <div key={l.id} className="link-row">
+                        <input
+                          className="inp"
+                          placeholder="Label"
+                          value={l.label}
+                          onChange={e => {
+                            const lnks = [...(profileDraft.links ?? [])]
+                            lnks[i] = { ...lnks[i], label: e.target.value }
+                            setProfileDraft(p => ({ ...p, links: lnks }))
+                          }}
+                        />
+                        <input
+                          className="inp"
+                          placeholder="URL"
+                          value={l.url}
+                          onChange={e => {
+                            const lnks = [...(profileDraft.links ?? [])]
+                            lnks[i] = { ...lnks[i], url: e.target.value }
+                            setProfileDraft(p => ({ ...p, links: lnks }))
+                          }}
+                        />
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          onClick={() => setProfileDraft(p => ({ ...p, links: (p.links ?? []).filter((_, j) => j !== i) }))}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {(profileDraft.links ?? []).length === 0 && (
+                      <p className="empty-state">No links yet. Add one above.</p>
+                    )}
                   </div>
                 </div>
               </div>
-
-              <div className="profile-col">
-                <div className="card">
-                  <h3 className="card-title">Social links</h3>
-                  {(profileDraft.socials ?? DEFAULT_SOCIALS).map((s, i) => (
-                    <div key={s.k} className="inp-group">
-                      <label className="inp-label">{s.p}</label>
-                      <input
-                        className="inp"
-                        placeholder={`${s.k} URL`}
-                        value={s.url}
-                        onChange={e => {
-                          const updated = [...(profileDraft.socials ?? DEFAULT_SOCIALS)]
-                          updated[i] = { ...updated[i], url: e.target.value }
-                          setProfileDraft(p => ({ ...p, socials: updated }))
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="card">
-                  <div className="card-title-row">
-                    <h3 className="card-title">Links</h3>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setProfileDraft(p => ({ ...p, links: [...(p.links ?? []), { id: crypto.randomUUID(), label: '', url: '', icon: '' }] }))}>
-                      <Plus size={13} /> Add
-                    </button>
-                  </div>
-                  {(profileDraft.links ?? []).map((l, i) => (
-                    <div key={l.id} className="link-row">
-                      <input className="inp" placeholder="Label" value={l.label} onChange={e => { const lnks = [...(profileDraft.links ?? [])]; lnks[i] = { ...lnks[i], label: e.target.value }; setProfileDraft(p => ({ ...p, links: lnks })) }} />
-                      <input className="inp" placeholder="URL" value={l.url} onChange={e => { const lnks = [...(profileDraft.links ?? [])]; lnks[i] = { ...lnks[i], url: e.target.value }; setProfileDraft(p => ({ ...p, links: lnks })) }} />
-                      <button className="btn btn-ghost btn-icon" onClick={() => setProfileDraft(p => ({ ...p, links: (p.links ?? []).filter((_, j) => j !== i) }))}><Trash2 size={14} /></button>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
-          </div>
+          </>
         )}
 
-        {/* ── CRM ─────────────────────────────────────────────────── */}
+        {/* ── CRM ───────────────────────────────────────────── */}
         {section === 'crm' && (
-          <div className="dash-section">
-            <div className="dash-header">
-              <h1>CRM</h1>
-              <button className="btn btn-primary" onClick={() => { setShowNewContact(true); setContactDraft({ stage: 'lead', value: 0 }) }}>
-                <Plus size={14} /> New contact
-              </button>
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">CRM</span>
+              <div className="dash-topbar-actions">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => { setShowNewContact(true); setContactDraft({ stage: 'lead', value: 0 }) }}
+                >
+                  <Plus size={14} /> New contact
+                </button>
+              </div>
             </div>
-
-            {/* Pipeline board */}
-            <div className="pipeline">
-              {STAGES.map(stage => {
-                const cols = filteredContacts.filter(c => c.stage === stage.k)
-                const total = cols.reduce((s, c) => s + (c.value ?? 0), 0)
-                return (
-                  <div key={stage.k} className="pcol">
-                    <div className="pcol-header">
-                      <span className="pcol-dot" style={{ background: stage.color }} />
-                      <span className="pcol-label">{stage.l}</span>
-                      <span className="pcol-count">{cols.length}</span>
-                      {total > 0 && <span className="pcol-total">${total.toLocaleString()}</span>}
+            <div className="dash-content">
+              <div className="pipeline">
+                {STAGES.map(stage => {
+                  const cols = contacts.filter(c => c.stage === stage.k)
+                  const total = cols.reduce((s, c) => s + (c.value ?? 0), 0)
+                  return (
+                    <div key={stage.k} className="pcol">
+                      <div className="pcol-header">
+                        <span className="pcol-dot" style={{ background: stage.color }} />
+                        <span className="pcol-label">{stage.l}</span>
+                        <span className="pcol-count">{cols.length}</span>
+                        {total > 0 && <span className="pcol-total">${total.toLocaleString()}</span>}
+                      </div>
+                      <div className="pcol-cards">
+                        {cols.map(c => (
+                          <div
+                            key={c.id}
+                            className={`pcard${activeContact?.id === c.id ? ' active' : ''}`}
+                            onClick={() => { setActiveContact(c); setContactDraft(c); setShowNewContact(false) }}
+                          >
+                            <div className="pcard-name">{c.name}</div>
+                            {c.company && <div className="pcard-company">{c.company}</div>}
+                            {c.value ? <div className="pcard-value">${c.value.toLocaleString()}</div> : null}
+                          </div>
+                        ))}
+                        {cols.length === 0 && <p className="empty-state">Empty</p>}
+                      </div>
                     </div>
-                    <div className="pcol-cards">
-                      {cols.map(c => (
-                        <div
-                          key={c.id}
-                          className={`pcard${activeContact?.id === c.id ? ' active' : ''}`}
-                          onClick={() => { setActiveContact(c); setContactDraft(c) }}
-                        >
-                          <div className="pcard-name">{c.name}</div>
-                          {c.company && <div className="pcard-company">{c.company}</div>}
-                          {c.value ? <div className="pcard-value">${c.value.toLocaleString()}</div> : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
 
-            {/* Contact detail panel */}
-            {(activeContact || showNewContact) && (
-              <div className="contact-panel">
-                <div className="panel-header">
-                  <h3>{showNewContact ? 'New contact' : activeContact?.name}</h3>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary btn-sm" onClick={showNewContact ? createContact : saveContact} disabled={saving}>
-                      <Save size={13} /> {saving ? '…' : 'Save'}
-                    </button>
-                    {!showNewContact && activeContact && (
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteContact(activeContact.id)}>
-                        <Trash2 size={13} />
+              {(activeContact || showNewContact) && (
+                <div className="panel">
+                  <div className="panel-header">
+                    <span className="panel-title">{showNewContact ? 'New contact' : activeContact?.name}</span>
+                    <div className="panel-actions">
+                      <button className="btn btn-primary btn-sm" onClick={showNewContact ? createContact : saveContact} disabled={saving}>
+                        <Save size={13} /> {saving ? '…' : 'Save'}
                       </button>
-                    )}
-                    <button className="btn btn-ghost btn-icon" onClick={() => { setActiveContact(null); setShowNewContact(false) }}>
-                      <X size={15} />
-                    </button>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="panel-row">
-                    <div className="inp-group">
-                      <label className="inp-label">Name</label>
-                      <input className="inp" value={contactDraft.name ?? ''} onChange={e => setContactDraft(p => ({ ...p, name: e.target.value }))} />
-                    </div>
-                    <div className="inp-group">
-                      <label className="inp-label">Company</label>
-                      <input className="inp" value={contactDraft.company ?? ''} onChange={e => setContactDraft(p => ({ ...p, company: e.target.value }))} />
+                      {!showNewContact && activeContact && (
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteContact(activeContact.id)}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                      <button className="btn btn-ghost btn-icon" onClick={() => { setActiveContact(null); setShowNewContact(false) }}>
+                        <X size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="panel-row">
-                    <div className="inp-group">
-                      <label className="inp-label">Stage</label>
-                      <select className="inp" value={contactDraft.stage ?? 'lead'} onChange={e => setContactDraft(p => ({ ...p, stage: e.target.value as Contact['stage'] }))}>
-                        {STAGES.map(s => <option key={s.k} value={s.k}>{s.l}</option>)}
-                      </select>
+                  <div className="panel-body">
+                    <div className="panel-row">
+                      <div className="inp-group">
+                        <label className="inp-label">Name</label>
+                        <input className="inp" value={contactDraft.name ?? ''} onChange={e => setContactDraft(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div className="inp-group">
+                        <label className="inp-label">Company</label>
+                        <input className="inp" value={contactDraft.company ?? ''} onChange={e => setContactDraft(p => ({ ...p, company: e.target.value }))} />
+                      </div>
                     </div>
-                    <div className="inp-group">
-                      <label className="inp-label">Deal value ($)</label>
-                      <input className="inp" type="number" value={contactDraft.value ?? 0} onChange={e => setContactDraft(p => ({ ...p, value: Number(e.target.value) }))} />
+                    <div className="panel-row">
+                      <div className="inp-group">
+                        <label className="inp-label">Stage</label>
+                        <select className="inp" value={contactDraft.stage ?? 'lead'} onChange={e => setContactDraft(p => ({ ...p, stage: e.target.value as Contact['stage'] }))}>
+                          {STAGES.map(s => <option key={s.k} value={s.k}>{s.l}</option>)}
+                        </select>
+                      </div>
+                      <div className="inp-group">
+                        <label className="inp-label">Deal value ($)</label>
+                        <input className="inp" type="number" value={contactDraft.value ?? 0} onChange={e => setContactDraft(p => ({ ...p, value: Number(e.target.value) }))} />
+                      </div>
                     </div>
-                  </div>
-                  <div className="panel-row">
-                    <div className="inp-group">
-                      <label className="inp-label">Email</label>
-                      <input className="inp" type="email" value={contactDraft.email ?? ''} onChange={e => setContactDraft(p => ({ ...p, email: e.target.value }))} />
+                    <div className="panel-row">
+                      <div className="inp-group">
+                        <label className="inp-label">Email</label>
+                        <input className="inp" type="email" value={contactDraft.email ?? ''} onChange={e => setContactDraft(p => ({ ...p, email: e.target.value }))} />
+                      </div>
+                      <div className="inp-group">
+                        <label className="inp-label">Phone</label>
+                        <input className="inp" value={contactDraft.phone ?? ''} onChange={e => setContactDraft(p => ({ ...p, phone: e.target.value }))} />
+                      </div>
                     </div>
-                    <div className="inp-group">
-                      <label className="inp-label">Phone</label>
-                      <input className="inp" value={contactDraft.phone ?? ''} onChange={e => setContactDraft(p => ({ ...p, phone: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="panel-row">
                     <div className="inp-group">
                       <label className="inp-label">Source</label>
                       <input className="inp" placeholder="How'd you meet?" value={contactDraft.source ?? ''} onChange={e => setContactDraft(p => ({ ...p, source: e.target.value }))} />
                     </div>
-                  </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Notes</label>
-                    <textarea className="inp inp-ta" rows={4} value={contactDraft.notes ?? ''} onChange={e => setContactDraft(p => ({ ...p, notes: e.target.value }))} />
+                    <div className="inp-group">
+                      <label className="inp-label">Notes</label>
+                      <textarea className="inp inp-ta" rows={4} value={contactDraft.notes ?? ''} onChange={e => setContactDraft(p => ({ ...p, notes: e.target.value }))} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </>
         )}
 
-        {/* ── Folders ──────────────────────────────────────────────── */}
+        {/* ── Folders ───────────────────────────────────────── */}
         {section === 'folders' && (
-          <div className="dash-section">
-            <div className="dash-header">
-              <h1>Folders</h1>
-              <button className="btn btn-primary" onClick={() => { setShowNewFolder(true); setFolderDraft({ icon: '📁', color: '#00ffd1' }) }}>
-                <Plus size={14} /> New folder
-              </button>
-            </div>
-
-            <div className="folder-grid">
-              {folders.map(f => (
-                <div
-                  key={f.id}
-                  className={`folder-card${activeFolder?.id === f.id ? ' active' : ''}`}
-                  style={{ borderColor: f.color }}
-                  onClick={() => { setActiveFolder(f); setFolderDraft(f); setShowNewFolder(false) }}
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">Folders</span>
+              <div className="dash-topbar-actions">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => { setShowNewFolder(true); setFolderDraft({ icon: '📁', color: '#00ffd1' }) }}
                 >
-                  <span className="folder-icon">{f.icon}</span>
-                  <div className="folder-info">
-                    <div className="folder-name">{f.name}</div>
-                    {f.description && <div className="folder-desc">{f.description}</div>}
-                  </div>
-                </div>
-              ))}
+                  <Plus size={14} /> New folder
+                </button>
+              </div>
             </div>
+            <div className="dash-content">
+              <div className="folder-grid">
+                {folders.map(f => (
+                  <div
+                    key={f.id}
+                    className={`folder-card${activeFolder?.id === f.id ? ' active' : ''}`}
+                    style={{ borderTopColor: f.color }}
+                    onClick={() => { setActiveFolder(f); setFolderDraft(f); setShowNewFolder(false) }}
+                  >
+                    <span className="folder-icon">{f.icon}</span>
+                    <div>
+                      <div className="folder-name">{f.name}</div>
+                      {f.description && <div className="folder-desc">{f.description}</div>}
+                    </div>
+                  </div>
+                ))}
+                {folders.length === 0 && (
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <p className="empty-state">No folders yet. Create one above.</p>
+                  </div>
+                )}
+              </div>
 
-            {(activeFolder || showNewFolder) && (
-              <div className="contact-panel">
-                <div className="panel-header">
-                  <h3>{showNewFolder ? 'New folder' : activeFolder?.name}</h3>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary btn-sm" onClick={showNewFolder ? createFolder : saveFolder} disabled={saving}>
-                      <Save size={13} /> {saving ? '…' : 'Save'}
-                    </button>
-                    {!showNewFolder && activeFolder && (
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteFolder(activeFolder.id)}>
-                        <Trash2 size={13} />
+              {(activeFolder || showNewFolder) && (
+                <div className="panel">
+                  <div className="panel-header">
+                    <span className="panel-title">{showNewFolder ? 'New folder' : activeFolder?.name}</span>
+                    <div className="panel-actions">
+                      <button className="btn btn-primary btn-sm" onClick={showNewFolder ? createFolder : saveFolder} disabled={saving}>
+                        <Save size={13} /> {saving ? '…' : 'Save'}
                       </button>
-                    )}
-                    <button className="btn btn-ghost btn-icon" onClick={() => { setActiveFolder(null); setShowNewFolder(false) }}>
-                      <X size={15} />
-                    </button>
-                  </div>
-                </div>
-                <div className="panel-body">
-                  <div className="inp-group">
-                    <label className="inp-label">Name</label>
-                    <input className="inp" value={folderDraft.name ?? ''} onChange={e => setFolderDraft(p => ({ ...p, name: e.target.value }))} />
-                  </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Description</label>
-                    <input className="inp" value={folderDraft.description ?? ''} onChange={e => setFolderDraft(p => ({ ...p, description: e.target.value }))} />
-                  </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Icon</label>
-                    <div className="icon-picker">
-                      {FOLDER_ICONS.map(ic => (
-                        <button key={ic} className={`icon-opt${folderDraft.icon === ic ? ' active' : ''}`} onClick={() => setFolderDraft(p => ({ ...p, icon: ic }))}>{ic}</button>
-                      ))}
+                      {!showNewFolder && activeFolder && (
+                        <button className="btn btn-danger btn-sm" onClick={() => deleteFolder(activeFolder.id)}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                      <button className="btn btn-ghost btn-icon" onClick={() => { setActiveFolder(null); setShowNewFolder(false) }}>
+                        <X size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="inp-group">
-                    <label className="inp-label">Color</label>
-                    <div className="color-picker">
-                      {FOLDER_COLORS.map(cl => (
-                        <button key={cl} className={`color-opt${folderDraft.color === cl ? ' active' : ''}`} style={{ background: cl }} onClick={() => setFolderDraft(p => ({ ...p, color: cl }))} />
-                      ))}
+                  <div className="panel-body">
+                    <div className="inp-group">
+                      <label className="inp-label">Name</label>
+                      <input className="inp" value={folderDraft.name ?? ''} onChange={e => setFolderDraft(p => ({ ...p, name: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Description</label>
+                      <input className="inp" value={folderDraft.description ?? ''} onChange={e => setFolderDraft(p => ({ ...p, description: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Icon</label>
+                      <div className="icon-picker">
+                        {FOLDER_ICONS.map(ic => (
+                          <button key={ic} className={`icon-opt${folderDraft.icon === ic ? ' active' : ''}`} onClick={() => setFolderDraft(p => ({ ...p, icon: ic }))}>{ic}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Color</label>
+                      <div className="color-picker">
+                        {FOLDER_COLORS.map(cl => (
+                          <button key={cl} className={`color-opt${folderDraft.color === cl ? ' active' : ''}`} style={{ background: cl }} onClick={() => setFolderDraft(p => ({ ...p, color: cl }))} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </>
         )}
 
-        {/* ── Notes ────────────────────────────────────────────────── */}
+        {/* ── Notes ─────────────────────────────────────────── */}
         {section === 'notes' && (
-          <div className="dash-section">
-            <div className="dash-header">
-              <h1>Notes</h1>
-              <button className="btn btn-primary" onClick={createNote}>
-                <Plus size={14} /> New note
-              </button>
-            </div>
-            <div className="notes-layout">
-              <div className="notes-list">
-                {notes.map(n => (
-                  <div
-                    key={n.id}
-                    className={`note-item${activeNote?.id === n.id ? ' active' : ''}`}
-                    onClick={() => setActiveNote(n)}
-                  >
-                    <div className="note-item-title">{n.title || 'Untitled'}</div>
-                    <div className="note-item-preview">{n.body?.slice(0, 60) || 'Empty'}</div>
-                    <button className="note-delete" onClick={e => { e.stopPropagation(); deleteNote(n.id) }}><Trash2 size={12} /></button>
-                  </div>
-                ))}
-                {notes.length === 0 && <p className="empty-state">No notes yet. Create one above.</p>}
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">Notes</span>
+              <div className="dash-topbar-actions">
+                <button className="btn btn-primary btn-sm" onClick={createNote}>
+                  <Plus size={14} /> New note
+                </button>
               </div>
-              {activeNote && (
-                <div className="note-editor">
-                  <input
-                    className="inp note-title-inp"
-                    placeholder="Title"
-                    value={activeNote.title}
-                    onChange={e => setActiveNote(n => n ? { ...n, title: e.target.value } : n)}
-                    onBlur={saveNote}
-                  />
-                  <textarea
-                    className="inp note-body-inp"
-                    placeholder="Start writing…"
-                    value={activeNote.body}
-                    onChange={e => setActiveNote(n => n ? { ...n, body: e.target.value } : n)}
-                    onBlur={saveNote}
-                  />
-                </div>
-              )}
             </div>
-          </div>
+            <div className="dash-content">
+              <div className="notes-layout">
+                <div className="notes-list">
+                  {notes.map(n => (
+                    <div
+                      key={n.id}
+                      className={`note-item${activeNote?.id === n.id ? ' active' : ''}`}
+                      onClick={() => setActiveNote(n)}
+                    >
+                      <div className="note-item-title">{n.title || 'Untitled'}</div>
+                      <div className="note-item-preview">{n.body?.slice(0, 60) || 'Empty'}</div>
+                      <button className="note-delete" onClick={e => { e.stopPropagation(); deleteNote(n.id) }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  {notes.length === 0 && <p className="empty-state">No notes yet.</p>}
+                </div>
+                {activeNote ? (
+                  <div className="note-editor">
+                    <input
+                      className="inp note-title-inp"
+                      placeholder="Title"
+                      value={activeNote.title}
+                      onChange={e => setActiveNote(n => n ? { ...n, title: e.target.value } : n)}
+                      onBlur={saveNote}
+                    />
+                    <textarea
+                      className="inp note-body-inp"
+                      placeholder="Start writing…"
+                      value={activeNote.body}
+                      onChange={e => setActiveNote(n => n ? { ...n, body: e.target.value } : n)}
+                      onBlur={saveNote}
+                    />
+                  </div>
+                ) : (
+                  <div className="note-editor">
+                    <div className="empty-state-block">
+                      <StickyNote size={36} style={{ color: 'var(--tx4)' }} />
+                      <p>Select a note or create one</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
-        {/* ── Calendar ─────────────────────────────────────────────── */}
+        {/* ── Calendar ──────────────────────────────────────── */}
         {section === 'calendar' && (
-          <div className="dash-section">
-            <div className="dash-header"><h1>Calendar</h1></div>
-            <div className="empty-state-block">
-              <Calendar size={40} style={{ color: 'var(--tx3)', marginBottom: 12 }} />
-              <p>Calendar view coming soon.</p>
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">Calendar</span>
             </div>
-          </div>
+            <div className="dash-content">
+              <div className="empty-state-block">
+                <Calendar size={40} style={{ color: 'var(--tx3)' }} />
+                <p>Calendar coming soon.</p>
+              </div>
+            </div>
+          </>
         )}
 
-        {/* ── Diary ────────────────────────────────────────────────── */}
+        {/* ── Diary ─────────────────────────────────────────── */}
         {section === 'diary' && (
-          <div className="dash-section">
-            <div className="dash-header">
-              <h1>Diary</h1>
-              <button className="btn btn-primary" onClick={createDiaryEntry}>
-                <Plus size={14} /> New entry
-              </button>
-            </div>
-            <div className="notes-layout">
-              <div className="notes-list">
-                {diaryEntries.map(d => (
-                  <div
-                    key={d.id}
-                    className={`note-item${activeDiary?.id === d.id ? ' active' : ''}`}
-                    onClick={() => setActiveDiary(d)}
-                  >
-                    <div className="note-item-title">{d.date}</div>
-                    <div className="note-item-preview">{d.body?.slice(0, 60) || 'Empty'}</div>
-                  </div>
-                ))}
-                {diaryEntries.length === 0 && <p className="empty-state">No entries yet.</p>}
+          <>
+            <div className="dash-topbar">
+              <span className="dash-topbar-title">Diary</span>
+              <div className="dash-topbar-actions">
+                <button className="btn btn-primary btn-sm" onClick={createDiaryEntry}>
+                  <Plus size={14} /> New entry
+                </button>
               </div>
-              {activeDiary && (
-                <div className="note-editor">
-                  <div className="diary-date">{activeDiary.date}</div>
-                  <textarea
-                    className="inp note-body-inp"
-                    placeholder="Write about your day…"
-                    value={activeDiary.body}
-                    onChange={e => setActiveDiary(d => d ? { ...d, body: e.target.value } : d)}
-                    onBlur={saveDiary}
-                  />
-                </div>
-              )}
             </div>
-          </div>
+            <div className="dash-content">
+              <div className="notes-layout">
+                <div className="notes-list">
+                  {diaryEntries.map(d => (
+                    <div
+                      key={d.id}
+                      className={`note-item${activeDiary?.id === d.id ? ' active' : ''}`}
+                      onClick={() => setActiveDiary(d)}
+                    >
+                      <div className="note-item-title">{d.date}</div>
+                      <div className="note-item-preview">{d.body?.slice(0, 60) || 'Empty'}</div>
+                    </div>
+                  ))}
+                  {diaryEntries.length === 0 && <p className="empty-state">No entries yet.</p>}
+                </div>
+                {activeDiary ? (
+                  <div className="note-editor">
+                    <div className="diary-date">{activeDiary.date}</div>
+                    <textarea
+                      className="inp note-body-inp"
+                      placeholder="Write about your day…"
+                      value={activeDiary.body}
+                      onChange={e => setActiveDiary(d => d ? { ...d, body: e.target.value } : d)}
+                      onBlur={saveDiary}
+                    />
+                  </div>
+                ) : (
+                  <div className="note-editor">
+                    <div className="empty-state-block">
+                      <BookOpen size={36} style={{ color: 'var(--tx4)' }} />
+                      <p>Select an entry or create one</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
       </main>

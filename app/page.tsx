@@ -48,24 +48,29 @@ export default function LandingPage() {
 
   if (mode !== 'landing') {
     return (
-      <div className="land-auth-wrap">
-        <div className="land-auth-card">
-          <div className="land-logo">
-            <Zap size={20} className="land-logo-icon" />
-            space.online
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <div className="brand">
+              <Zap size={18} className="brand-icon" />
+              space.online
+            </div>
           </div>
 
           {sent ? (
-            <div className="land-sent">
+            <div className="auth-sent">
               <Mail size={32} style={{ color: 'var(--teal)', marginBottom: 12 }} />
               <h2>Check your email</h2>
-              <p>We sent a link to <strong>{email}</strong>. Click it to continue.</p>
+              <p>We sent a magic link to <strong>{email}</strong>. Click it to sign in.</p>
             </div>
           ) : (
             <>
-              <h2 className="land-auth-title">
+              <h2 className="auth-title">
                 {mode === 'signin' ? 'Welcome back' : 'Create your space'}
               </h2>
+              <p className="auth-sub">
+                {mode === 'signin' ? 'Sign in to your workspace' : 'Get started — free forever'}
+              </p>
 
               <div className="inp-group">
                 <label className="inp-label">Email</label>
@@ -79,10 +84,10 @@ export default function LandingPage() {
                 />
               </div>
 
-              {error && <p className="land-error">{error}</p>}
+              {error && <p className="auth-error">{error}</p>}
 
               <button
-                className="btn btn-primary land-auth-btn"
+                className="auth-btn auth-btn-primary"
                 onClick={handleMagicLink}
                 disabled={loading || !email}
               >
@@ -90,7 +95,7 @@ export default function LandingPage() {
                 {loading ? 'Sending…' : 'Send magic link'}
               </button>
 
-              <div className="land-divider"><span>or use password</span></div>
+              <div className="auth-divider">or use password</div>
 
               <div className="inp-group">
                 <label className="inp-label">Password</label>
@@ -105,7 +110,7 @@ export default function LandingPage() {
               </div>
 
               <button
-                className="btn btn-secondary land-auth-btn"
+                className="auth-btn auth-btn-secondary"
                 onClick={() => handlePassword(mode)}
                 disabled={loading || !email || !password}
               >
@@ -113,17 +118,17 @@ export default function LandingPage() {
                 {mode === 'signin' ? 'Sign in' : 'Create account'}
               </button>
 
-              <p className="land-switch">
+              <p className="auth-switch">
                 {mode === 'signin'
-                  ? <>No account? <button onClick={() => { setMode('signup'); setError('') }}>Sign up</button></>
+                  ? <>No account? <button onClick={() => { setMode('signup'); setError('') }}>Sign up free</button></>
                   : <>Have an account? <button onClick={() => { setMode('signin'); setError('') }}>Sign in</button></>
                 }
               </p>
             </>
           )}
 
-          <button className="land-back" onClick={() => { setMode('landing'); setSent(false); setError('') }}>
-            ← Back
+          <button className="auth-back" onClick={() => { setMode('landing'); setSent(false); setError('') }}>
+            ← Back to home
           </button>
         </div>
       </div>
@@ -131,64 +136,74 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="land-wrap">
+    <div className="land-page">
       <nav className="land-nav">
-        <div className="land-logo">
-          <Zap size={18} className="land-logo-icon" />
+        <div className="brand">
+          <Zap size={16} className="brand-icon" />
           space.online
         </div>
         <div className="land-nav-actions">
-          <button className="btn btn-ghost btn-sm land-nav-signin" onClick={() => setMode('signin')}>Sign in</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setMode('signup')}>Get started</button>
+          <button className="btn btn-ghost btn-sm land-nav-signin" onClick={() => setMode('signin')}>
+            Sign in
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => setMode('signup')}>
+            Get started
+          </button>
         </div>
       </nav>
 
       <section className="land-hero">
-        <div className="land-hero-badge">Now in beta</div>
-        <h1 className="land-hero-title">Your profile.<br />Your CRM.<br />Your business.</h1>
+        <div className="land-hero-glow" />
+        <div className="land-hero-badge">
+          <Zap size={10} /> Now in beta
+        </div>
+        <h1 className="land-hero-title">
+          Your profile.<br />Your CRM.<br />Your business.
+        </h1>
         <p className="land-hero-sub">
           One link for everything — share your profile, manage contacts,
           organize projects, and stay on top of your business.
         </p>
-        <div className="land-hero-actions">
-          <button className="btn btn-primary land-cta" onClick={() => setMode('signup')}>
+        <div className="land-hero-ctas">
+          <button className="land-cta-primary" onClick={() => setMode('signup')}>
             Get your space <ArrowRight size={16} />
           </button>
-          <button className="btn btn-ghost land-cta" onClick={() => setMode('signin')}>
+          <button className="land-cta-ghost" onClick={() => setMode('signin')}>
             Sign in
           </button>
         </div>
-        <p className="land-hero-url">space.online/<span className="land-hero-url-you">yourname</span></p>
+        <p className="land-hero-url">space.online/<b>yourname</b></p>
       </section>
 
       <section className="land-features">
-        <div className="land-feature-card">
-          <Globe size={24} className="land-feature-icon" />
+        <div className="land-feat-card">
+          <Globe size={22} className="land-feat-icon" />
           <h3>Public profile</h3>
           <p>A shareable page at space.online/you with your links, socials, and bio.</p>
         </div>
-        <div className="land-feature-card">
-          <BarChart2 size={24} className="land-feature-icon" />
+        <div className="land-feat-card">
+          <BarChart2 size={22} className="land-feat-icon" />
           <h3>Built-in CRM</h3>
           <p>Track contacts and deals through a full pipeline — lead to closed.</p>
         </div>
-        <div className="land-feature-card">
-          <FolderOpen size={24} className="land-feature-icon" />
+        <div className="land-feat-card">
+          <FolderOpen size={22} className="land-feat-icon" />
           <h3>Folders &amp; projects</h3>
           <p>Organize anything — clients, jobs, brand deals — into labeled folders.</p>
         </div>
-        <div className="land-feature-card">
-          <BookOpen size={24} className="land-feature-icon" />
+        <div className="land-feat-card">
+          <BookOpen size={22} className="land-feat-icon" />
           <h3>Notes &amp; diary</h3>
           <p>Capture ideas, log entries, and keep a private journal — all in one place.</p>
         </div>
       </section>
 
       <footer className="land-footer">
-        <span className="land-logo" style={{ fontSize: 13 }}>
-          <Zap size={13} className="land-logo-icon" /> space.online
-        </span>
-        <span style={{ color: 'var(--tx3)', fontSize: 12 }}>© 2026</span>
+        <div className="brand" style={{ fontSize: 13 }}>
+          <Zap size={13} className="brand-icon" />
+          space.online
+        </div>
+        <span style={{ color: 'var(--tx3)', fontSize: 12 }}>© 2026 space.online</span>
       </footer>
     </div>
   )

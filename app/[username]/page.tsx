@@ -26,11 +26,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: 'IG',
-  tiktok: 'TK',
-  youtube: 'YT',
-  twitter: 'X',
-  linkedin: 'LI',
-  facebook: 'FB',
+  tiktok:    'TK',
+  youtube:   'YT',
+  twitter:   'X',
+  linkedin:  'LI',
+  facebook:  'FB',
 }
 
 export default async function PublicProfilePage({ params }: Props) {
@@ -46,10 +46,10 @@ export default async function PublicProfilePage({ params }: Props) {
   if (!space) notFound()
 
   const socials = (space.socials ?? []).filter((s: { url: string; pub: boolean }) => s.url && s.pub !== false)
-  const links = (space.links ?? []).filter((l: { url: string }) => l.url)
+  const links   = (space.links   ?? []).filter((l: { url: string }) => l.url)
 
   return (
-    <div className="pub-wrap">
+    <div className="pub-page">
       <div className="pub-card">
         <div className="pub-avatar">
           {(space.display_name ?? username).charAt(0).toUpperCase()}
@@ -59,18 +59,25 @@ export default async function PublicProfilePage({ params }: Props) {
 
         {space.bio && <p className="pub-bio">{space.bio}</p>}
 
-        <div className="pub-meta">
-          {space.location && (
-            <span className="pub-meta-item">
-              <MapPin size={13} /> {space.location}
-            </span>
-          )}
-          {space.website && (
-            <a href={space.website} target="_blank" rel="noopener noreferrer" className="pub-meta-item pub-meta-link">
-              <Globe size={13} /> {space.website.replace(/^https?:\/\//, '')}
-            </a>
-          )}
-        </div>
+        {(space.location || space.website) && (
+          <div className="pub-meta">
+            {space.location && (
+              <span className="pub-meta-item">
+                <MapPin size={13} /> {space.location}
+              </span>
+            )}
+            {space.website && (
+              <a
+                href={space.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pub-meta-item pub-meta-link"
+              >
+                <Globe size={13} /> {space.website.replace(/^https?:\/\//, '')}
+              </a>
+            )}
+          </div>
+        )}
 
         {socials.length > 0 && (
           <div className="pub-socials">
