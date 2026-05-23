@@ -1,0 +1,47 @@
+{
+  "$schema": "https://space.online/templates/schema/v1",
+  "version": "1",
+  "description": "Schema for space.online community workspace templates",
+  "template": {
+    "id": "string (slug, e.g. 'solar-sales')",
+    "name": "string (human-readable label)",
+    "description": "string (one-line description shown in onboarding)",
+    "category": "string (industry/niche tag)",
+    "author": "string (optional GitHub username)",
+    "folders": [
+      {
+        "name": "string",
+        "icon": "string (single emoji)",
+        "color": "string (hex color)",
+        "description": "string (optional)"
+      }
+    ],
+    "contacts": [
+      {
+        "name": "string",
+        "company": "string (optional)",
+        "stage": "lead | prospect | active | closed | lost",
+        "source": "string (optional, e.g. 'Referral')",
+        "value": "number (optional deal value in USD)",
+        "notes": "string (optional)"
+      }
+    ]
+  },
+  "example": {
+    "id": "solar-sales",
+    "name": "Solar sales",
+    "description": "Leads, installs, jobs, and subcontractors for solar reps",
+    "category": "solar",
+    "author": "yourhandle",
+    "folders": [
+      { "name": "Pipeline",        "icon": "📊", "color": "#00ffd1", "description": "Active leads and prospects" },
+      { "name": "Active Installs", "icon": "☀️", "color": "#f59e0b", "description": "Jobs currently in progress" },
+      { "name": "Completed Jobs",  "icon": "✅", "color": "#22c55e", "description": "Installed and paid" },
+      { "name": "Subcontractors",  "icon": "🔧", "color": "#7c3aed", "description": "Crew and partners" }
+    ],
+    "contacts": [
+      { "name": "Sample Lead",      "company": "Homeowner",      "stage": "lead",   "source": "Door knock", "value": 8500, "notes": "3BR home, 8kW system" },
+      { "name": "Referral Partner", "company": "Local HVAC Co.", "stage": "active", "source": "Networking", "value": 0,    "notes": "Sends referrals monthly" }
+    ]
+  }
+}

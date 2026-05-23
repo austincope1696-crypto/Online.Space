@@ -1,0 +1,659 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { DEFAULT_SOCIALS, STAGES, FOLDER_ICONS, FOLDER_COLORS, MODULE_OPTIONS } from '@/lib/constants'
+import type { Space, Contact, Folder, Module } from '@/lib/types'
+import {
+  Zap, User, BarChart2, FolderOpen, StickyNote, Calendar, BookOpen,
+  LogOut, Plus, Trash2, Save, ExternalLink, Menu, X, ChevronDown,
+  GripVertical, Settings, Globe, Link2, Search, Edit2, Eye,
+} from 'lucide-react'
+
+const MODULE_ICONS: Record<Module, React.ReactNode> = {
+  crm:      <BarChart2 size={16} />,
+  folders:  <FolderOpen size={16} />,
+  notes:    <StickyNote size={16} />,
+  calendar: <Calendar size={16} />,
+  diary:    <BookOpen size={16} />,
+}
+
+const MODULE_LABELS: Record<Module, string> = {
+  crm: 'CRM', folders: 'Folders', notes: 'Notes', calendar: 'Calendar', diary: 'Diary',
+}
+
+type Section = 'profile' | Module
+
+export default function DashboardPage() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [space, setSpace] = useState<Space | null>(null)
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [notes, setNotes] = useState<{ id: string; title: string; body: string; updated_at: string }[]>([])
+  const [diaryEntries, setDiaryEntries] = useState<{ id: string; date: string; body: string }[]>([])
+
+  const [section, setSection] = useState<Section>('profile')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileDraft, setProfileDraft] = useState<Partial<Space>>({})
+
+  // CRM state
+  const [crmSearch, setCrmSearch] = useState('')
+  const [activeContact, setActiveContact] = useState<Contact | null>(null)
+  const [contactDraft, setContactDraft] = useState<Partial<Contact>>({})
+  const [showNewContact, setShowNewContact] = useState(false)
+
+  // Folder state
+  const [activeFolder, setActiveFolder] = useState<Folder | null>(null)
+  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [folderDraft, setFolderDraft] = useState<Partial<Folder>>({})
+
+  // Notes state
+  const [activeNote, setActiveNote] = useState<{ id: string; title: string; body: string; updated_at: string } | null>(null)
+
+  // Diary state
+  const [activeDiary, setActiveDiary] = useState<{ id: string; date: string; body: string } | null>(null)
+
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/'); return }
+
+    const [{ data: sp }, { data: cts }, { data: fds }, { data: nts }, { data: drs }] = await Promise.all([
+      supabase.from('spaces').select('*').eq('user_id', user.id).maybeSingle(),
+      supabase.from('contacts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('folders').select('*').eq('user_id', user.id).order('created_at'),
+      supabase.from('notes').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
+      supabase.from('diary_entries').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+    ])
+
+    if (sp) {
+      setSpace(sp)
+      setProfileDraft(sp)
+      if (!sp.modules?.length) { router.push('/onboarding'); return }
+      setSection(sp.modules[0] as Module)
+    }
+    setContacts(cts ?? [])
+    setFolders(fds ?? [])
+    setNotes(nts ?? [])
+    setDiaryEntries(drs ?? [])
+    setLoading(false)
+  }
+
+  async function saveProfile() {
+    if (!space) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('spaces').upsert({ ...profileDraft, user_id: user.id }, { onConflict: 'user_id' })
+    setSpace(prev => prev ? { ...prev, ...profileDraft } : prev)
+    setSaving(false)
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  // ── CRM ──────────────────────────────────────────────────────────────────
+
+  async function createContact() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('contacts').insert({
+      user_id: user.id,
+      name: contactDraft.name || 'New contact',
+      company: contactDraft.company || '',
+      stage: contactDraft.stage || 'lead',
+      source: contactDraft.source || '',
+      value: contactDraft.value || 0,
+      notes: contactDraft.notes || '',
+      phone: contactDraft.phone || '',
+      email: contactDraft.email || '',
+    }).select().single()
+    if (data) {
+      setContacts(prev => [data, ...prev])
+      setActiveContact(data)
+      setContactDraft(data)
+      setShowNewContact(false)
+    }
+  }
+
+  async function saveContact() {
+    if (!activeContact) return
+    setSaving(true)
+    await supabase.from('contacts').update(contactDraft).eq('id', activeContact.id)
+    setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, ...contactDraft } as Contact : c))
+    setActiveContact(prev => prev ? { ...prev, ...contactDraft } as Contact : prev)
+    setSaving(false)
+  }
+
+  async function deleteContact(id: string) {
+    await supabase.from('contacts').delete().eq('id', id)
+    setContacts(prev => prev.filter(c => c.id !== id))
+    if (activeContact?.id === id) { setActiveContact(null); setContactDraft({}) }
+  }
+
+  // ── Folders ───────────────────────────────────────────────────────────────
+
+  async function createFolder() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('folders').insert({
+      user_id: user.id,
+      name: folderDraft.name || 'New folder',
+      icon: folderDraft.icon || '📁',
+      color: folderDraft.color || '#00ffd1',
+      description: folderDraft.description || '',
+    }).select().single()
+    if (data) {
+      setFolders(prev => [...prev, data])
+      setActiveFolder(data)
+      setFolderDraft(data)
+      setShowNewFolder(false)
+    }
+  }
+
+  async function saveFolder() {
+    if (!activeFolder) return
+    setSaving(true)
+    await supabase.from('folders').update(folderDraft).eq('id', activeFolder.id)
+    setFolders(prev => prev.map(f => f.id === activeFolder.id ? { ...f, ...folderDraft } as Folder : f))
+    setActiveFolder(prev => prev ? { ...prev, ...folderDraft } as Folder : prev)
+    setSaving(false)
+  }
+
+  async function deleteFolder(id: string) {
+    await supabase.from('folders').delete().eq('id', id)
+    setFolders(prev => prev.filter(f => f.id !== id))
+    if (activeFolder?.id === id) { setActiveFolder(null); setFolderDraft({}) }
+  }
+
+  // ── Notes ─────────────────────────────────────────────────────────────────
+
+  async function createNote() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('notes').insert({
+      user_id: user.id, title: 'Untitled', body: '',
+    }).select().single()
+    if (data) { setNotes(prev => [data, ...prev]); setActiveNote(data) }
+  }
+
+  async function saveNote() {
+    if (!activeNote) return
+    setSaving(true)
+    const updated = { ...activeNote, updated_at: new Date().toISOString() }
+    await supabase.from('notes').update({ title: updated.title, body: updated.body }).eq('id', updated.id)
+    setNotes(prev => prev.map(n => n.id === updated.id ? updated : n))
+    setSaving(false)
+  }
+
+  async function deleteNote(id: string) {
+    await supabase.from('notes').delete().eq('id', id)
+    setNotes(prev => prev.filter(n => n.id !== id))
+    if (activeNote?.id === id) setActiveNote(null)
+  }
+
+  // ── Diary ─────────────────────────────────────────────────────────────────
+
+  async function createDiaryEntry() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const today = new Date().toISOString().slice(0, 10)
+    const { data } = await supabase.from('diary_entries').insert({
+      user_id: user.id, date: today, body: '',
+    }).select().single()
+    if (data) { setDiaryEntries(prev => [data, ...prev]); setActiveDiary(data) }
+  }
+
+  async function saveDiary() {
+    if (!activeDiary) return
+    setSaving(true)
+    await supabase.from('diary_entries').update({ body: activeDiary.body }).eq('id', activeDiary.id)
+    setDiaryEntries(prev => prev.map(d => d.id === activeDiary.id ? activeDiary : d))
+    setSaving(false)
+  }
+
+  if (loading) return (
+    <div className="dash-loading">
+      <Zap size={28} style={{ color: 'var(--teal)' }} className="spin" />
+    </div>
+  )
+
+  if (!space) return null
+
+  const modules = (space.modules ?? []) as Module[]
+  const filteredContacts = contacts.filter(c =>
+    !crmSearch || c.name.toLowerCase().includes(crmSearch.toLowerCase()) ||
+    (c.company ?? '').toLowerCase().includes(crmSearch.toLowerCase())
+  )
+
+  return (
+    <div className="dash-layout">
+      {/* Mobile header */}
+      <div className="dash-mobile-header">
+        <div className="land-logo" style={{ fontSize: 15 }}>
+          <Zap size={15} className="land-logo-icon" /> space.online
+        </div>
+        <button className="btn btn-ghost btn-icon" onClick={() => setSidebarOpen(o => !o)}>
+          {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
+        <div className="sidebar-logo">
+          <Zap size={16} className="land-logo-icon" />
+          <span>space.online</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`sidebar-item${section === 'profile' ? ' active' : ''}`}
+            onClick={() => { setSection('profile'); setSidebarOpen(false) }}
+          >
+            <User size={16} /> Profile
+          </button>
+
+          {modules.map(m => (
+            <button
+              key={m}
+              className={`sidebar-item${section === m ? ' active' : ''}`}
+              onClick={() => { setSection(m); setSidebarOpen(false) }}
+            >
+              {MODULE_ICONS[m]} {MODULE_LABELS[m]}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          {space.username && (
+            <a
+              href={`/${space.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sidebar-item"
+            >
+              <Eye size={16} /> View profile
+            </a>
+          )}
+          <button className="sidebar-item" onClick={signOut}>
+            <LogOut size={16} /> Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="dash-main" onClick={() => sidebarOpen && setSidebarOpen(false)}>
+
+        {/* ── Profile ─────────────────────────────────────────────── */}
+        {section === 'profile' && (
+          <div className="dash-section">
+            <div className="dash-header">
+              <h1>Profile</h1>
+              <button className="btn btn-primary" onClick={saveProfile} disabled={saving}>
+                <Save size={14} /> {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+
+            <div className="profile-grid">
+              <div className="profile-col">
+                <div className="card">
+                  <h3 className="card-title">Basic info</h3>
+                  <div className="inp-group">
+                    <label className="inp-label">Display name</label>
+                    <input className="inp" value={profileDraft.display_name ?? ''} onChange={e => setProfileDraft(p => ({ ...p, display_name: e.target.value }))} />
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Username</label>
+                    <div className="inp-prefix-wrap">
+                      <span className="inp-prefix">space.online/</span>
+                      <input className="inp inp-prefixed" value={profileDraft.username ?? ''} onChange={e => setProfileDraft(p => ({ ...p, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))} />
+                    </div>
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Bio</label>
+                    <textarea className="inp inp-ta" rows={3} value={profileDraft.bio ?? ''} onChange={e => setProfileDraft(p => ({ ...p, bio: e.target.value }))} />
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Location</label>
+                    <input className="inp" value={profileDraft.location ?? ''} onChange={e => setProfileDraft(p => ({ ...p, location: e.target.value }))} />
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Website</label>
+                    <input className="inp" placeholder="https://" value={profileDraft.website ?? ''} onChange={e => setProfileDraft(p => ({ ...p, website: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-col">
+                <div className="card">
+                  <h3 className="card-title">Social links</h3>
+                  {(profileDraft.socials ?? DEFAULT_SOCIALS).map((s, i) => (
+                    <div key={s.k} className="inp-group">
+                      <label className="inp-label">{s.p}</label>
+                      <input
+                        className="inp"
+                        placeholder={`${s.k} URL`}
+                        value={s.url}
+                        onChange={e => {
+                          const updated = [...(profileDraft.socials ?? DEFAULT_SOCIALS)]
+                          updated[i] = { ...updated[i], url: e.target.value }
+                          setProfileDraft(p => ({ ...p, socials: updated }))
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="card">
+                  <div className="card-title-row">
+                    <h3 className="card-title">Links</h3>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setProfileDraft(p => ({ ...p, links: [...(p.links ?? []), { id: crypto.randomUUID(), label: '', url: '', icon: '' }] }))}>
+                      <Plus size={13} /> Add
+                    </button>
+                  </div>
+                  {(profileDraft.links ?? []).map((l, i) => (
+                    <div key={l.id} className="link-row">
+                      <input className="inp" placeholder="Label" value={l.label} onChange={e => { const lnks = [...(profileDraft.links ?? [])]; lnks[i] = { ...lnks[i], label: e.target.value }; setProfileDraft(p => ({ ...p, links: lnks })) }} />
+                      <input className="inp" placeholder="URL" value={l.url} onChange={e => { const lnks = [...(profileDraft.links ?? [])]; lnks[i] = { ...lnks[i], url: e.target.value }; setProfileDraft(p => ({ ...p, links: lnks })) }} />
+                      <button className="btn btn-ghost btn-icon" onClick={() => setProfileDraft(p => ({ ...p, links: (p.links ?? []).filter((_, j) => j !== i) }))}><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CRM ─────────────────────────────────────────────────── */}
+        {section === 'crm' && (
+          <div className="dash-section">
+            <div className="dash-header">
+              <h1>CRM</h1>
+              <button className="btn btn-primary" onClick={() => { setShowNewContact(true); setContactDraft({ stage: 'lead', value: 0 }) }}>
+                <Plus size={14} /> New contact
+              </button>
+            </div>
+
+            {/* Pipeline board */}
+            <div className="pipeline">
+              {STAGES.map(stage => {
+                const cols = filteredContacts.filter(c => c.stage === stage.k)
+                const total = cols.reduce((s, c) => s + (c.value ?? 0), 0)
+                return (
+                  <div key={stage.k} className="pcol">
+                    <div className="pcol-header">
+                      <span className="pcol-dot" style={{ background: stage.color }} />
+                      <span className="pcol-label">{stage.l}</span>
+                      <span className="pcol-count">{cols.length}</span>
+                      {total > 0 && <span className="pcol-total">${total.toLocaleString()}</span>}
+                    </div>
+                    <div className="pcol-cards">
+                      {cols.map(c => (
+                        <div
+                          key={c.id}
+                          className={`pcard${activeContact?.id === c.id ? ' active' : ''}`}
+                          onClick={() => { setActiveContact(c); setContactDraft(c) }}
+                        >
+                          <div className="pcard-name">{c.name}</div>
+                          {c.company && <div className="pcard-company">{c.company}</div>}
+                          {c.value ? <div className="pcard-value">${c.value.toLocaleString()}</div> : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Contact detail panel */}
+            {(activeContact || showNewContact) && (
+              <div className="contact-panel">
+                <div className="panel-header">
+                  <h3>{showNewContact ? 'New contact' : activeContact?.name}</h3>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-primary btn-sm" onClick={showNewContact ? createContact : saveContact} disabled={saving}>
+                      <Save size={13} /> {saving ? '…' : 'Save'}
+                    </button>
+                    {!showNewContact && activeContact && (
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteContact(activeContact.id)}>
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <button className="btn btn-ghost btn-icon" onClick={() => { setActiveContact(null); setShowNewContact(false) }}>
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="panel-row">
+                    <div className="inp-group">
+                      <label className="inp-label">Name</label>
+                      <input className="inp" value={contactDraft.name ?? ''} onChange={e => setContactDraft(p => ({ ...p, name: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Company</label>
+                      <input className="inp" value={contactDraft.company ?? ''} onChange={e => setContactDraft(p => ({ ...p, company: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="panel-row">
+                    <div className="inp-group">
+                      <label className="inp-label">Stage</label>
+                      <select className="inp" value={contactDraft.stage ?? 'lead'} onChange={e => setContactDraft(p => ({ ...p, stage: e.target.value as Contact['stage'] }))}>
+                        {STAGES.map(s => <option key={s.k} value={s.k}>{s.l}</option>)}
+                      </select>
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Deal value ($)</label>
+                      <input className="inp" type="number" value={contactDraft.value ?? 0} onChange={e => setContactDraft(p => ({ ...p, value: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+                  <div className="panel-row">
+                    <div className="inp-group">
+                      <label className="inp-label">Email</label>
+                      <input className="inp" type="email" value={contactDraft.email ?? ''} onChange={e => setContactDraft(p => ({ ...p, email: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Phone</label>
+                      <input className="inp" value={contactDraft.phone ?? ''} onChange={e => setContactDraft(p => ({ ...p, phone: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="panel-row">
+                    <div className="inp-group">
+                      <label className="inp-label">Source</label>
+                      <input className="inp" placeholder="How'd you meet?" value={contactDraft.source ?? ''} onChange={e => setContactDraft(p => ({ ...p, source: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Notes</label>
+                    <textarea className="inp inp-ta" rows={4} value={contactDraft.notes ?? ''} onChange={e => setContactDraft(p => ({ ...p, notes: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Folders ──────────────────────────────────────────────── */}
+        {section === 'folders' && (
+          <div className="dash-section">
+            <div className="dash-header">
+              <h1>Folders</h1>
+              <button className="btn btn-primary" onClick={() => { setShowNewFolder(true); setFolderDraft({ icon: '📁', color: '#00ffd1' }) }}>
+                <Plus size={14} /> New folder
+              </button>
+            </div>
+
+            <div className="folder-grid">
+              {folders.map(f => (
+                <div
+                  key={f.id}
+                  className={`folder-card${activeFolder?.id === f.id ? ' active' : ''}`}
+                  style={{ borderColor: f.color }}
+                  onClick={() => { setActiveFolder(f); setFolderDraft(f); setShowNewFolder(false) }}
+                >
+                  <span className="folder-icon">{f.icon}</span>
+                  <div className="folder-info">
+                    <div className="folder-name">{f.name}</div>
+                    {f.description && <div className="folder-desc">{f.description}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {(activeFolder || showNewFolder) && (
+              <div className="contact-panel">
+                <div className="panel-header">
+                  <h3>{showNewFolder ? 'New folder' : activeFolder?.name}</h3>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-primary btn-sm" onClick={showNewFolder ? createFolder : saveFolder} disabled={saving}>
+                      <Save size={13} /> {saving ? '…' : 'Save'}
+                    </button>
+                    {!showNewFolder && activeFolder && (
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteFolder(activeFolder.id)}>
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <button className="btn btn-ghost btn-icon" onClick={() => { setActiveFolder(null); setShowNewFolder(false) }}>
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <div className="inp-group">
+                    <label className="inp-label">Name</label>
+                    <input className="inp" value={folderDraft.name ?? ''} onChange={e => setFolderDraft(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Description</label>
+                    <input className="inp" value={folderDraft.description ?? ''} onChange={e => setFolderDraft(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Icon</label>
+                    <div className="icon-picker">
+                      {FOLDER_ICONS.map(ic => (
+                        <button key={ic} className={`icon-opt${folderDraft.icon === ic ? ' active' : ''}`} onClick={() => setFolderDraft(p => ({ ...p, icon: ic }))}>{ic}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="inp-group">
+                    <label className="inp-label">Color</label>
+                    <div className="color-picker">
+                      {FOLDER_COLORS.map(cl => (
+                        <button key={cl} className={`color-opt${folderDraft.color === cl ? ' active' : ''}`} style={{ background: cl }} onClick={() => setFolderDraft(p => ({ ...p, color: cl }))} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Notes ────────────────────────────────────────────────── */}
+        {section === 'notes' && (
+          <div className="dash-section">
+            <div className="dash-header">
+              <h1>Notes</h1>
+              <button className="btn btn-primary" onClick={createNote}>
+                <Plus size={14} /> New note
+              </button>
+            </div>
+            <div className="notes-layout">
+              <div className="notes-list">
+                {notes.map(n => (
+                  <div
+                    key={n.id}
+                    className={`note-item${activeNote?.id === n.id ? ' active' : ''}`}
+                    onClick={() => setActiveNote(n)}
+                  >
+                    <div className="note-item-title">{n.title || 'Untitled'}</div>
+                    <div className="note-item-preview">{n.body?.slice(0, 60) || 'Empty'}</div>
+                    <button className="note-delete" onClick={e => { e.stopPropagation(); deleteNote(n.id) }}><Trash2 size={12} /></button>
+                  </div>
+                ))}
+                {notes.length === 0 && <p className="empty-state">No notes yet. Create one above.</p>}
+              </div>
+              {activeNote && (
+                <div className="note-editor">
+                  <input
+                    className="inp note-title-inp"
+                    placeholder="Title"
+                    value={activeNote.title}
+                    onChange={e => setActiveNote(n => n ? { ...n, title: e.target.value } : n)}
+                    onBlur={saveNote}
+                  />
+                  <textarea
+                    className="inp note-body-inp"
+                    placeholder="Start writing…"
+                    value={activeNote.body}
+                    onChange={e => setActiveNote(n => n ? { ...n, body: e.target.value } : n)}
+                    onBlur={saveNote}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Calendar ─────────────────────────────────────────────── */}
+        {section === 'calendar' && (
+          <div className="dash-section">
+            <div className="dash-header"><h1>Calendar</h1></div>
+            <div className="empty-state-block">
+              <Calendar size={40} style={{ color: 'var(--tx3)', marginBottom: 12 }} />
+              <p>Calendar view coming soon.</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Diary ────────────────────────────────────────────────── */}
+        {section === 'diary' && (
+          <div className="dash-section">
+            <div className="dash-header">
+              <h1>Diary</h1>
+              <button className="btn btn-primary" onClick={createDiaryEntry}>
+                <Plus size={14} /> New entry
+              </button>
+            </div>
+            <div className="notes-layout">
+              <div className="notes-list">
+                {diaryEntries.map(d => (
+                  <div
+                    key={d.id}
+                    className={`note-item${activeDiary?.id === d.id ? ' active' : ''}`}
+                    onClick={() => setActiveDiary(d)}
+                  >
+                    <div className="note-item-title">{d.date}</div>
+                    <div className="note-item-preview">{d.body?.slice(0, 60) || 'Empty'}</div>
+                  </div>
+                ))}
+                {diaryEntries.length === 0 && <p className="empty-state">No entries yet.</p>}
+              </div>
+              {activeDiary && (
+                <div className="note-editor">
+                  <div className="diary-date">{activeDiary.date}</div>
+                  <textarea
+                    className="inp note-body-inp"
+                    placeholder="Write about your day…"
+                    value={activeDiary.body}
+                    onChange={e => setActiveDiary(d => d ? { ...d, body: e.target.value } : d)}
+                    onBlur={saveDiary}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+  )
+}
