@@ -83,7 +83,13 @@ input,textarea,select{font-family:var(--f)}
   font-family:var(--f);letter-spacing:.01em;
 }
 .btn:hover:not(:disabled){border-color:var(--bdr3);background:var(--bg5)}
+.btn:active:not(:disabled){transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.land-cta-primary:focus-visible,.land-cta-ghost:focus-visible,
+.auth-btn:focus-visible,.ob-item:focus-visible,.dash-nav-item:focus-visible,
+.inp:focus-visible{
+  outline:2px solid rgba(0,255,209,.5);outline-offset:2px;
+}
 
 .btn-primary{
   background:var(--teal);color:#000;
@@ -93,6 +99,7 @@ input,textarea,select{font-family:var(--f)}
   opacity:.9;
   box-shadow:0 0 20px var(--teal-glow);
 }
+.btn-primary:active:not(:disabled){transform:scale(.97);opacity:.85}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
 
 .btn-secondary{
@@ -226,6 +233,7 @@ select.inp{
   background:var(--teal-dim);border:1px solid rgba(0,255,209,.2);
   border-radius:20px;padding:4px 14px;margin-bottom:28px;
   letter-spacing:.1em;text-transform:uppercase;
+  animation:fade-up .5s ease both;
 }
 .land-hero-title{
   font-size:clamp(44px,6vw,76px);font-weight:800;
@@ -234,15 +242,18 @@ select.inp{
   background:linear-gradient(165deg,#fff 40%,rgba(255,255,255,.5));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
+  animation:fade-up .5s ease .08s both;
 }
 .land-hero-sub{
   font-size:16px;color:var(--tx2);
   max-width:480px;margin:0 auto 40px;
   line-height:1.75;
+  animation:fade-up .5s ease .16s both;
 }
 .land-hero-ctas{
   display:flex;gap:12px;justify-content:center;
   flex-wrap:wrap;margin-bottom:32px;
+  animation:fade-up .5s ease .24s both;
 }
 .land-cta-primary{
   display:inline-flex;align-items:center;gap:8px;
@@ -252,6 +263,7 @@ select.inp{
   transition:all .18s;letter-spacing:.01em;
 }
 .land-cta-primary:hover{opacity:.9;box-shadow:0 0 28px var(--teal-glow);transform:translateY(-1px)}
+.land-cta-primary:active{transform:scale(.97);opacity:.85}
 .land-cta-ghost{
   display:inline-flex;align-items:center;gap:8px;
   padding:13px 24px;border-radius:var(--r2);
@@ -261,7 +273,11 @@ select.inp{
   transition:all .18s;
 }
 .land-cta-ghost:hover{border-color:var(--bdr3);color:var(--tx);background:var(--bg3)}
-.land-hero-url{font-size:12px;color:var(--tx4);letter-spacing:.01em}
+.land-cta-ghost:active{transform:scale(.97)}
+.land-hero-url{
+  font-size:12px;color:var(--tx4);letter-spacing:.01em;
+  animation:fade-up .5s ease .3s both;
+}
 .land-hero-url b{color:var(--teal);font-weight:700}
 
 /* features */
@@ -277,7 +293,8 @@ select.inp{
   transition:border-color .2s,transform .2s;
 }
 .land-feat-card:hover{border-color:var(--bdr2);transform:translateY(-2px)}
-.land-feat-icon{color:var(--teal);margin-bottom:12px}
+.land-feat-card:hover .land-feat-icon{transform:scale(1.1)}
+.land-feat-icon{color:var(--teal);margin-bottom:12px;display:block;transition:transform .2s}
 .land-feat-card h3{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--tx)}
 .land-feat-card p{font-size:12px;color:var(--tx2);line-height:1.65}
 
@@ -743,4 +760,8 @@ select.inp{
   .pcol{min-width:unset}
   .notes-layout{flex-direction:column}
   .notes-list{width:100%;max-height:200px;overflow-y:auto}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
