@@ -46,6 +46,18 @@ export default function LandingPage() {
     setLoading(false)
   }
 
+  async function handleForgotPassword() {
+    if (!email) { setError('Enter your email above first'); return }
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}/auth/callback`,
+    })
+    if (error) setError(error.message)
+    else setSent(true)
+    setLoading(false)
+  }
+
   if (mode !== 'landing') {
     return (
       <div className="auth-page">
@@ -61,7 +73,7 @@ export default function LandingPage() {
             <div className="auth-sent">
               <Mail size={32} style={{ color: 'var(--teal)', marginBottom: 12 }} />
               <h2>Check your email</h2>
-              <p>We sent a magic link to <strong>{email}</strong>. Click it to sign in.</p>
+              <p>We sent a link to <strong>{email}</strong>. Click it to continue.</p>
             </div>
           ) : (
             <>
@@ -117,6 +129,17 @@ export default function LandingPage() {
                 <Lock size={15} />
                 {mode === 'signin' ? 'Sign in' : 'Create account'}
               </button>
+
+              {mode === 'signin' && (
+                <button
+                  className="auth-back"
+                  style={{ marginTop: 4 }}
+                  onClick={handleForgotPassword}
+                  disabled={loading || !email}
+                >
+                  Forgot password?
+                </button>
+              )}
 
               <p className="auth-switch">
                 {mode === 'signin'
