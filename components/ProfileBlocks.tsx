@@ -1,5 +1,5 @@
-import { ExternalLink } from 'lucide-react'
-import type { LayoutBlock, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig } from '@/lib/types'
+import { ExternalLink, Briefcase, GraduationCap, Sparkles } from 'lucide-react'
+import type { LayoutBlock, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig, AboutBlockConfig, GalleryBlockConfig } from '@/lib/types'
 
 function embedUrl(url: string): { src: string; aspect: 'video' | 'audio' } | null {
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
@@ -27,6 +27,41 @@ export default function ProfileBlocks({ blocks }: { blocks: LayoutBlock[] }) {
             <div key={b.id} className="pub-status-badge" style={{ borderColor: cfg.color || undefined }}>
               {cfg.emoji && <span>{cfg.emoji}</span>}
               {cfg.label}
+            </div>
+          )
+        }
+
+        if (b.type === 'about') {
+          const cfg = b.config as AboutBlockConfig
+          if (!cfg.work && !cfg.education && !cfg.interests) return null
+          return (
+            <div key={b.id} className="pub-about-block">
+              <div className="pub-block-caption">About</div>
+              {cfg.work && (
+                <div className="pub-about-row"><Briefcase size={14} /> {cfg.work}</div>
+              )}
+              {cfg.education && (
+                <div className="pub-about-row"><GraduationCap size={14} /> {cfg.education}</div>
+              )}
+              {cfg.interests && (
+                <div className="pub-about-row"><Sparkles size={14} /> {cfg.interests}</div>
+              )}
+            </div>
+          )
+        }
+
+        if (b.type === 'gallery') {
+          const cfg = b.config as GalleryBlockConfig
+          if (!cfg.images?.length) return null
+          return (
+            <div key={b.id} className="pub-gallery-block">
+              {cfg.title && <div className="pub-block-caption">{cfg.title}</div>}
+              <div className="pub-gallery-grid">
+                {cfg.images.map(img => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={img.id} src={img.url} alt={img.caption || ''} className="pub-gallery-img" />
+                ))}
+              </div>
             </div>
           )
         }

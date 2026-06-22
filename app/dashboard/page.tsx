@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_SOCIALS, STAGES, FOLDER_ICONS, FOLDER_COLORS, MODULE_OPTIONS, BLOCK_TYPES, newBlock } from '@/lib/constants'
-import type { Space, Contact, Folder, Module, LayoutBlock, BlockType, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig } from '@/lib/types'
+import type { Space, Contact, Folder, Module, LayoutBlock, BlockType, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig, AboutBlockConfig, GalleryBlockConfig } from '@/lib/types'
 import {
   Zap, User, BarChart2, FolderOpen, StickyNote, Calendar, BookOpen,
   LogOut, Plus, Trash2, Save, X, Menu, Eye, ChevronUp, ChevronDown, Blocks,
@@ -99,7 +99,7 @@ export default function DashboardPage() {
     setProfileDraft(p => ({ ...p, layout: [...(p.layout ?? []), newBlock(type)] }))
   }
 
-  function updateBlock(id: string, config: Partial<StatusBlockConfig & MediaBlockConfig & FeaturedBlockConfig>) {
+  function updateBlock(id: string, config: Partial<StatusBlockConfig & MediaBlockConfig & FeaturedBlockConfig & AboutBlockConfig & GalleryBlockConfig>) {
     setProfileDraft(p => ({
       ...p,
       layout: (p.layout ?? []).map(b => b.id === id ? { ...b, config: { ...b.config, ...config } } : b),
@@ -506,6 +506,84 @@ export default function DashboardPage() {
                                 onChange={e => updateBlock(block.id, { emoji: e.target.value })}
                               />
                             </div>
+                          </>
+                        )}
+
+                        {block.type === 'about' && (
+                          <>
+                            <div className="inp-group">
+                              <label className="inp-label">Work</label>
+                              <input
+                                className="inp"
+                                placeholder="Solar consultant at SunPeak"
+                                value={(block.config as AboutBlockConfig).work ?? ''}
+                                onChange={e => updateBlock(block.id, { work: e.target.value })}
+                              />
+                            </div>
+                            <div className="inp-group">
+                              <label className="inp-label">Education</label>
+                              <input
+                                className="inp"
+                                placeholder="Arizona State University"
+                                value={(block.config as AboutBlockConfig).education ?? ''}
+                                onChange={e => updateBlock(block.id, { education: e.target.value })}
+                              />
+                            </div>
+                            <div className="inp-group">
+                              <label className="inp-label">Interests</label>
+                              <input
+                                className="inp"
+                                placeholder="Hiking, real estate, golf"
+                                value={(block.config as AboutBlockConfig).interests ?? ''}
+                                onChange={e => updateBlock(block.id, { interests: e.target.value })}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {block.type === 'gallery' && (
+                          <>
+                            <div className="inp-group">
+                              <label className="inp-label">Section title</label>
+                              <input
+                                className="inp"
+                                placeholder="Gallery"
+                                value={(block.config as GalleryBlockConfig).title ?? ''}
+                                onChange={e => updateBlock(block.id, { title: e.target.value })}
+                              />
+                            </div>
+                            {((block.config as GalleryBlockConfig).images ?? []).map((img, j) => (
+                              <div key={img.id} className="featured-item-row">
+                                <input
+                                  className="inp"
+                                  placeholder="Image URL"
+                                  value={img.url}
+                                  onChange={e => {
+                                    const images = [...(block.config as GalleryBlockConfig).images]
+                                    images[j] = { ...images[j], url: e.target.value }
+                                    updateBlock(block.id, { images })
+                                  }}
+                                />
+                                <button
+                                  className="btn btn-ghost btn-icon"
+                                  onClick={() => {
+                                    const images = (block.config as GalleryBlockConfig).images.filter((_, k) => k !== j)
+                                    updateBlock(block.id, { images })
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                const images = [...(block.config as GalleryBlockConfig).images, { id: crypto.randomUUID(), url: '' }]
+                                updateBlock(block.id, { images })
+                              }}
+                            >
+                              <Plus size={13} /> Add image
+                            </button>
                           </>
                         )}
 

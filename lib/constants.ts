@@ -1,14 +1,18 @@
-import { Social, Module, BlockType, LayoutBlock, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig } from './types'
+import { Social, Module, BlockType, LayoutBlock, BlockConfig } from './types'
 
 export const BLOCK_TYPES: { k: BlockType; label: string; desc: string }[] = [
   { k: 'status',   label: 'Status badge', desc: 'Broadcast what you\'re open to right now — booking, hiring, sold out' },
+  { k: 'about',    label: 'About',        desc: 'Work, education, interests — the Facebook-style info card' },
+  { k: 'gallery',  label: 'Gallery',      desc: 'A photo grid — your favorite shots, jobs, or moments' },
   { k: 'media',    label: 'Media embed',  desc: 'Embed a song, video, or playlist — YouTube, Spotify, SoundCloud' },
   { k: 'featured', label: 'Featured',     desc: 'Spotlight your best work, people, or links — the modern Top 8' },
 ]
 
-export function defaultBlockConfig(type: BlockType): StatusBlockConfig | MediaBlockConfig | FeaturedBlockConfig {
+export function defaultBlockConfig(type: BlockType): BlockConfig {
   switch (type) {
     case 'status':   return { label: 'Open for business', emoji: '🟢' }
+    case 'about':     return { work: '', education: '', interests: '' }
+    case 'gallery':   return { title: 'Gallery', images: [] }
     case 'media':     return { url: '', caption: '' }
     case 'featured':  return { title: 'Featured', items: [] }
   }

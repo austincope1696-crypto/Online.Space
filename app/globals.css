@@ -774,6 +774,11 @@ select.inp{
 }
 .pub-featured-label{font-size:12px;font-weight:600}
 .pub-featured-subtitle{font-size:11px;color:var(--tx3)}
+.pub-about-block{display:flex;flex-direction:column;gap:8px}
+.pub-about-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--tx2);background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 14px}
+.pub-about-row svg{color:var(--accent);flex-shrink:0}
+.pub-gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pub-gallery-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r2);background:var(--bg3)}
 
 /* dashboard block editor */
 .block-item{

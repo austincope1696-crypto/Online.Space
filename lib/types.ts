@@ -41,7 +41,7 @@ export interface Folder {
   created_at: string
 }
 
-export type BlockType = 'status' | 'media' | 'featured'
+export type BlockType = 'status' | 'media' | 'featured' | 'about' | 'gallery'
 
 export interface StatusBlockConfig {
   label: string
@@ -67,7 +67,24 @@ export interface FeaturedBlockConfig {
   items: FeaturedItem[]
 }
 
-export type BlockConfig = StatusBlockConfig | MediaBlockConfig | FeaturedBlockConfig
+export interface AboutBlockConfig {
+  work?: string
+  education?: string
+  interests?: string
+}
+
+export interface GalleryImage {
+  id: string
+  url: string
+  caption?: string
+}
+
+export interface GalleryBlockConfig {
+  title?: string
+  images: GalleryImage[]
+}
+
+export type BlockConfig = StatusBlockConfig | MediaBlockConfig | FeaturedBlockConfig | AboutBlockConfig | GalleryBlockConfig
 
 export interface LayoutBlock {
   id: string
