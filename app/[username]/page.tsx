@@ -39,7 +39,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: space } = await supabase
     .from('spaces')
-    .select('display_name, bio, location, website, socials, links, theme')
+    .select('display_name, bio, location, website, socials, links, theme, avatar_url, cover_url, accent_color')
     .eq('username', username)
     .maybeSingle()
 
@@ -47,13 +47,25 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const socials = (space.socials ?? []).filter((s: { url: string; pub: boolean }) => s.url && s.pub !== false)
   const links   = (space.links   ?? []).filter((l: { url: string }) => l.url)
+  const accent  = space.accent_color || '#00ffd1'
 
   return (
-    <div className="pub-page">
+    <div className="pub-page" style={{ '--accent': accent } as React.CSSProperties}>
+      {space.cover_url ? (
+        <div className="pub-cover" style={{ backgroundImage: `url(${space.cover_url})` }} />
+      ) : (
+        <div className="pub-cover pub-cover-fallback" />
+      )}
+
       <div className="pub-card">
-        <div className="pub-avatar">
-          {(space.display_name ?? username).charAt(0).toUpperCase()}
-        </div>
+        {space.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={space.avatar_url} alt={space.display_name ?? username} className="pub-avatar pub-avatar-img" />
+        ) : (
+          <div className="pub-avatar">
+            {(space.display_name ?? username).charAt(0).toUpperCase()}
+          </div>
+        )}
 
         <h1 className="pub-name">{space.display_name ?? username}</h1>
 

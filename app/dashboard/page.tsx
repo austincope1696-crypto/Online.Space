@@ -340,6 +340,34 @@ export default function DashboardPage() {
                       <input className="inp" placeholder="https://" value={profileDraft.website ?? ''} onChange={e => setProfileDraft(p => ({ ...p, website: e.target.value }))} />
                     </div>
                   </div>
+
+                  <div className="card">
+                    <h3 className="card-title">Stage appearance</h3>
+                    <div className="inp-group">
+                      <label className="inp-label">Avatar image URL</label>
+                      <input className="inp" placeholder="https://" value={profileDraft.avatar_url ?? ''} onChange={e => setProfileDraft(p => ({ ...p, avatar_url: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Cover image URL</label>
+                      <input className="inp" placeholder="https://" value={profileDraft.cover_url ?? ''} onChange={e => setProfileDraft(p => ({ ...p, cover_url: e.target.value }))} />
+                    </div>
+                    <div className="inp-group">
+                      <label className="inp-label">Accent color</label>
+                      <div className="accent-picker">
+                        <input
+                          type="color"
+                          className="accent-swatch"
+                          value={profileDraft.accent_color ?? '#00ffd1'}
+                          onChange={e => setProfileDraft(p => ({ ...p, accent_color: e.target.value }))}
+                        />
+                        <input
+                          className="inp"
+                          value={profileDraft.accent_color ?? '#00ffd1'}
+                          onChange={e => setProfileDraft(p => ({ ...p, accent_color: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

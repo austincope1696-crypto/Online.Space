@@ -50,6 +50,8 @@ export interface Space {
   location?: string
   website?: string
   avatar_url?: string
+  cover_url?: string
+  accent_color?: string
   socials?: Social[]
   links?: Link[]
   modules?: Module[]
