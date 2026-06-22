@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { DEFAULT_SOCIALS, STAGES, FOLDER_ICONS, FOLDER_COLORS, MODULE_OPTIONS } from '@/lib/constants'
-import type { Space, Contact, Folder, Module } from '@/lib/types'
+import { DEFAULT_SOCIALS, STAGES, FOLDER_ICONS, FOLDER_COLORS, MODULE_OPTIONS, BLOCK_TYPES, newBlock } from '@/lib/constants'
+import type { Space, Contact, Folder, Module, LayoutBlock, BlockType, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig } from '@/lib/types'
 import {
   Zap, User, BarChart2, FolderOpen, StickyNote, Calendar, BookOpen,
-  LogOut, Plus, Trash2, Save, X, Menu, Eye,
+  LogOut, Plus, Trash2, Save, X, Menu, Eye, ChevronUp, ChevronDown, Blocks,
 } from 'lucide-react'
 
 const MODULE_ICONS: Record<Module, React.ReactNode> = {
@@ -93,6 +93,32 @@ export default function DashboardPage() {
     await supabase.from('spaces').upsert({ ...profileDraft, user_id: user.id }, { onConflict: 'user_id' })
     setSpace(prev => prev ? { ...prev, ...profileDraft } : prev)
     setSaving(false)
+  }
+
+  function addBlock(type: BlockType) {
+    setProfileDraft(p => ({ ...p, layout: [...(p.layout ?? []), newBlock(type)] }))
+  }
+
+  function updateBlock(id: string, config: Partial<StatusBlockConfig & MediaBlockConfig & FeaturedBlockConfig>) {
+    setProfileDraft(p => ({
+      ...p,
+      layout: (p.layout ?? []).map(b => b.id === id ? { ...b, config: { ...b.config, ...config } } : b),
+    }))
+  }
+
+  function removeBlock(id: string) {
+    setProfileDraft(p => ({ ...p, layout: (p.layout ?? []).filter(b => b.id !== id) }))
+  }
+
+  function moveBlock(id: string, dir: -1 | 1) {
+    setProfileDraft(p => {
+      const list = [...(p.layout ?? [])]
+      const i = list.findIndex(b => b.id === id)
+      const j = i + dir
+      if (i < 0 || j < 0 || j >= list.length) return p
+      ;[list[i], list[j]] = [list[j], list[i]]
+      return { ...p, layout: list }
+    })
   }
 
   async function signOut() {
@@ -434,6 +460,136 @@ export default function DashboardPage() {
                     ))}
                     {(profileDraft.links ?? []).length === 0 && (
                       <p className="empty-state">No links yet. Add one above.</p>
+                    )}
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title-row">
+                      <h3 className="card-title"><Blocks size={14} /> Blocks</h3>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {BLOCK_TYPES.map(bt => (
+                          <button key={bt.k} className="btn btn-ghost btn-sm" title={bt.desc} onClick={() => addBlock(bt.k)}>
+                            <Plus size={12} /> {bt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(profileDraft.layout ?? []).map((block, i) => (
+                      <div key={block.id} className="block-item">
+                        <div className="block-item-head">
+                          <span className="block-item-type">{BLOCK_TYPES.find(t => t.k === block.type)?.label}</span>
+                          <div className="block-item-actions">
+                            <button className="btn btn-ghost btn-icon" disabled={i === 0} onClick={() => moveBlock(block.id, -1)}><ChevronUp size={13} /></button>
+                            <button className="btn btn-ghost btn-icon" disabled={i === (profileDraft.layout?.length ?? 0) - 1} onClick={() => moveBlock(block.id, 1)}><ChevronDown size={13} /></button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => removeBlock(block.id)}><Trash2 size={13} /></button>
+                          </div>
+                        </div>
+
+                        {block.type === 'status' && (
+                          <>
+                            <div className="inp-group">
+                              <label className="inp-label">Status label</label>
+                              <input
+                                className="inp"
+                                placeholder="Booking now"
+                                value={(block.config as StatusBlockConfig).label}
+                                onChange={e => updateBlock(block.id, { label: e.target.value })}
+                              />
+                            </div>
+                            <div className="inp-group">
+                              <label className="inp-label">Emoji</label>
+                              <input
+                                className="inp"
+                                placeholder="🟢"
+                                value={(block.config as StatusBlockConfig).emoji ?? ''}
+                                onChange={e => updateBlock(block.id, { emoji: e.target.value })}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {block.type === 'media' && (
+                          <>
+                            <div className="inp-group">
+                              <label className="inp-label">YouTube / Spotify / SoundCloud URL</label>
+                              <input
+                                className="inp"
+                                placeholder="https://"
+                                value={(block.config as MediaBlockConfig).url}
+                                onChange={e => updateBlock(block.id, { url: e.target.value })}
+                              />
+                            </div>
+                            <div className="inp-group">
+                              <label className="inp-label">Caption (optional)</label>
+                              <input
+                                className="inp"
+                                value={(block.config as MediaBlockConfig).caption ?? ''}
+                                onChange={e => updateBlock(block.id, { caption: e.target.value })}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {block.type === 'featured' && (
+                          <>
+                            <div className="inp-group">
+                              <label className="inp-label">Section title</label>
+                              <input
+                                className="inp"
+                                placeholder="Featured"
+                                value={(block.config as FeaturedBlockConfig).title ?? ''}
+                                onChange={e => updateBlock(block.id, { title: e.target.value })}
+                              />
+                            </div>
+                            {((block.config as FeaturedBlockConfig).items ?? []).map((item, j) => (
+                              <div key={item.id} className="featured-item-row">
+                                <input
+                                  className="inp"
+                                  placeholder="Label"
+                                  value={item.label}
+                                  onChange={e => {
+                                    const items = [...(block.config as FeaturedBlockConfig).items]
+                                    items[j] = { ...items[j], label: e.target.value }
+                                    updateBlock(block.id, { items })
+                                  }}
+                                />
+                                <input
+                                  className="inp"
+                                  placeholder="URL"
+                                  value={item.url ?? ''}
+                                  onChange={e => {
+                                    const items = [...(block.config as FeaturedBlockConfig).items]
+                                    items[j] = { ...items[j], url: e.target.value }
+                                    updateBlock(block.id, { items })
+                                  }}
+                                />
+                                <button
+                                  className="btn btn-ghost btn-icon"
+                                  onClick={() => {
+                                    const items = (block.config as FeaturedBlockConfig).items.filter((_, k) => k !== j)
+                                    updateBlock(block.id, { items })
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                const items = [...(block.config as FeaturedBlockConfig).items, { id: crypto.randomUUID(), label: '', url: '' }]
+                                updateBlock(block.id, { items })
+                              }}
+                            >
+                              <Plus size={13} /> Add item
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    {(profileDraft.layout ?? []).length === 0 && (
+                      <p className="empty-state">No blocks yet. Add a status, media, or featured block above.</p>
                     )}
                   </div>
                 </div>

@@ -41,6 +41,40 @@ export interface Folder {
   created_at: string
 }
 
+export type BlockType = 'status' | 'media' | 'featured'
+
+export interface StatusBlockConfig {
+  label: string
+  emoji?: string
+  color?: string
+}
+
+export interface MediaBlockConfig {
+  url: string
+  caption?: string
+}
+
+export interface FeaturedItem {
+  id: string
+  label: string
+  subtitle?: string
+  url?: string
+  image?: string
+}
+
+export interface FeaturedBlockConfig {
+  title?: string
+  items: FeaturedItem[]
+}
+
+export type BlockConfig = StatusBlockConfig | MediaBlockConfig | FeaturedBlockConfig
+
+export interface LayoutBlock {
+  id: string
+  type: BlockType
+  config: BlockConfig
+}
+
 export interface Space {
   id: string
   user_id: string
@@ -52,6 +86,7 @@ export interface Space {
   avatar_url?: string
   cover_url?: string
   accent_color?: string
+  layout?: LayoutBlock[]
   socials?: Social[]
   links?: Link[]
   modules?: Module[]

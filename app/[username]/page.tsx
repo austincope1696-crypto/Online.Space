@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import { Globe, MapPin, ExternalLink, Zap } from 'lucide-react'
+import ProfileBlocks from '@/components/ProfileBlocks'
+import type { LayoutBlock } from '@/lib/types'
 
 interface Props {
   params: Promise<{ username: string }>
@@ -39,7 +41,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: space } = await supabase
     .from('spaces')
-    .select('display_name, bio, location, website, socials, links, theme, avatar_url, cover_url, accent_color')
+    .select('display_name, bio, location, website, socials, links, theme, avatar_url, cover_url, accent_color, layout')
     .eq('username', username)
     .maybeSingle()
 
@@ -107,6 +109,8 @@ export default async function PublicProfilePage({ params }: Props) {
             ))}
           </div>
         )}
+
+        <ProfileBlocks blocks={(space.layout ?? []) as LayoutBlock[]} />
 
         {links.length > 0 && (
           <div className="pub-links">

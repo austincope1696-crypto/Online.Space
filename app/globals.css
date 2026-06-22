@@ -746,6 +746,45 @@ select.inp{
 }
 .pub-brand:hover{color:var(--tx3)}
 
+/* profile blocks: status, media, featured */
+.pub-blocks{display:flex;flex-direction:column;gap:18px;margin-bottom:22px;text-align:left}
+.pub-status-badge{
+  display:inline-flex;align-items:center;gap:6px;align-self:center;
+  font-size:12px;font-weight:700;color:var(--accent);
+  background:color-mix(in srgb, var(--accent) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius:999px;padding:6px 14px;
+}
+.pub-block-caption{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px}
+.pub-media-frame{width:100%;border:none;border-radius:var(--r2);display:block;background:var(--bg3)}
+.pub-media-frame.video{aspect-ratio:16/9;height:auto}
+.pub-media-frame.audio{height:152px}
+.pub-featured-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pub-featured-card{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;
+  padding:14px 10px;background:var(--bg3);border:1px solid var(--bdr);
+  border-radius:var(--r2);transition:all .15s;color:var(--tx);
+}
+.pub-featured-card:hover{border-color:color-mix(in srgb, var(--accent) 30%, transparent);transform:translateY(-1px)}
+.pub-featured-img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--bg4)}
+.pub-featured-img-fallback{
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:18px;color:var(--accent);
+  background:color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.pub-featured-label{font-size:12px;font-weight:600}
+.pub-featured-subtitle{font-size:11px;color:var(--tx3)}
+
+/* dashboard block editor */
+.block-item{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:14px 16px;margin-bottom:10px;
+}
+.block-item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.block-item-type{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent2,var(--teal))}
+.block-item-actions{display:flex;gap:4px}
+.featured-item-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+
 /* dashboard accent picker */
 .accent-picker{display:flex;gap:8px;align-items:center}
 .accent-swatch{

@@ -1,4 +1,22 @@
-import { Social, Module } from './types'
+import { Social, Module, BlockType, LayoutBlock, StatusBlockConfig, MediaBlockConfig, FeaturedBlockConfig } from './types'
+
+export const BLOCK_TYPES: { k: BlockType; label: string; desc: string }[] = [
+  { k: 'status',   label: 'Status badge', desc: 'Broadcast what you\'re open to right now — booking, hiring, sold out' },
+  { k: 'media',    label: 'Media embed',  desc: 'Embed a song, video, or playlist — YouTube, Spotify, SoundCloud' },
+  { k: 'featured', label: 'Featured',     desc: 'Spotlight your best work, people, or links — the modern Top 8' },
+]
+
+export function defaultBlockConfig(type: BlockType): StatusBlockConfig | MediaBlockConfig | FeaturedBlockConfig {
+  switch (type) {
+    case 'status':   return { label: 'Open for business', emoji: '🟢' }
+    case 'media':     return { url: '', caption: '' }
+    case 'featured':  return { title: 'Featured', items: [] }
+  }
+}
+
+export function newBlock(type: BlockType): LayoutBlock {
+  return { id: crypto.randomUUID(), type, config: defaultBlockConfig(type) }
+}
 
 export const DEFAULT_SOCIALS: Social[] = [
   { p: 'Instagram',   k: 'instagram', url: '', pub: true },
