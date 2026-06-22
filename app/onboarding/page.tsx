@@ -97,14 +97,18 @@ export default function OnboardingPage() {
               {MODULE_OPTIONS.map(m => (
                 <button
                   key={m.k}
-                  className={`ob-item${selectedModules.includes(m.k) ? ' selected' : ''}`}
-                  onClick={() => toggleModule(m.k)}
+                  className={`ob-item${selectedModules.includes(m.k) ? ' selected' : ''}${m.soon ? ' disabled' : ''}`}
+                  onClick={() => !m.soon && toggleModule(m.k)}
+                  disabled={m.soon}
                 >
                   <div className="ob-check">
                     {selectedModules.includes(m.k) && <Check size={12} />}
                   </div>
                   <div>
-                    <div className="ob-item-label">{m.label}</div>
+                    <div className="ob-item-label">
+                      {m.label}
+                      {m.soon && <span className="ob-item-soon">Coming soon</span>}
+                    </div>
                     <div className="ob-item-desc">{m.desc}</div>
                   </div>
                 </button>

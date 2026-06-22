@@ -20,11 +20,11 @@ export const STAGES = [
 export const FOLDER_ICONS = ['📁','☀️','🏠','🎬','💼','📊','🎯','⚡','🔥','💡','🌱','🔑','📋','🏗️','💰']
 export const FOLDER_COLORS = ['#00ffd1','#7c3aed','#f59e0b','#ef4444','#22c55e','#3b82f6','#ec4899','#f97316']
 
-export const MODULE_OPTIONS: { k: Module; label: string; desc: string }[] = [
+export const MODULE_OPTIONS: { k: Module; label: string; desc: string; soon?: boolean }[] = [
   { k: 'crm',      label: 'CRM',      desc: 'Track contacts, leads, and deals in a pipeline' },
   { k: 'folders',  label: 'Folders',  desc: 'Organize projects, jobs, and business lanes' },
   { k: 'notes',    label: 'Notes',    desc: 'Capture ideas and quick thoughts' },
-  { k: 'calendar', label: 'Calendar', desc: 'Schedule events and follow-ups' },
+  { k: 'calendar', label: 'Calendar', desc: 'Schedule events and follow-ups', soon: true },
   { k: 'diary',    label: 'Diary',    desc: 'Private daily journal and reflections' },
 ]
 
